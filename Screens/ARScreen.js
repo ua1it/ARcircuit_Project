@@ -58,17 +58,22 @@ const HelloWorldSceneAR = () => {
             shadowFarZ={5}
             shadowOpacity={.7} />
           <Viro3DObject
-            source={require('../models/emoji_smile.vrx')}
+            //source={require('../models/emoji_smile.vrx')}
             //source={require('../models/kielich.obj')}
+            source={require('../models/tinker.obj')}
             position={[0, 0, 0]}
-            scale={[.2, .2, .2]}
-            type="VRX"
+            scale={[.01, .01, .01]}
+            type="OBJ"
             lightReceivingBitMask={3}
             shadowCastingBitMask={2}
             transformBehaviors={['billboardY']}
-            resources={[require('../models/emoji_smile_diffuse.png'),
-            require('../models/emoji_smile_specular.png'),
-            require('../models/emoji_smile_normal.png')]} />
+            resources={[
+            // require('../models/emoji_smile_diffuse.png'),
+            // require('../models/emoji_smile_specular.png'),
+            // require('../models/emoji_smile_normal.png')
+            require('../models/obj.mtl')
+          ]} 
+            />
           <ViroQuad
             rotation={[-90, 0, 0]}
             width={.5} height={.5}
