@@ -9,6 +9,7 @@ import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
 import com.facebook.soloader.SoLoader;
 import java.lang.reflect.InvocationTargetException;
+import org.devio.rn.splashscreen.SplashScreen;
 import java.util.List;
 import com.viromedia.bridge.ReactViroPackage;
 

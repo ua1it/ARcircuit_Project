@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Button, Animated, PanResponder } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import SplashScreen from 'react-native-splash-screen';
 
 //Screens
 import ARScreen from './Screens/ARScreen';
@@ -81,6 +82,16 @@ const DetailsScreen = ({navigation}) => {
 const Stack = createStackNavigator();
 
 const App = () => {
+  useEffect(()=>{
+    try{
+      setTimeout(()=>{
+        SplashScreen.hide();
+      }, 2000);
+    } catch(e){
+      console.log(e.message);
+    }
+  });
+  
   return (
     //네비게이션의 트리를 관리해주는 컴포넌트
     <NavigationContainer>
