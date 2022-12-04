@@ -21,17 +21,23 @@ const HomeScreen = ({navigation}) => {
       >
         <Pressable style = {styles.centeredView} onPress = {() => setModalVisible(false)}>
           <View style = {styles.modalView} >
-            <Text style = {{fontWeight: 'bold'}}>Choose Your State</Text>
+            <Text style = {{fontWeight: 'bold', fontSize: 18}}>Choose Your State</Text>
             <View style = {{flexDirection: 'row', justifyContent:'space-between'}}>
               <TouchableOpacity style = {styles.modalButton} onPress = {()=>{
                 setModalVisible(!modalVisible);
                 navigation.navigate('ARScreen');
-              }}><Text>Detect</Text></TouchableOpacity>
+              }}><Text style = {{fontWeight: 'bold'}}>Detect</Text></TouchableOpacity>
               <Text>{'   '}</Text>
               <TouchableOpacity style = {styles.modalButton} onPress = {()=>{
                 setModalVisible(!modalVisible);
                 navigation.navigate('ARScreen');
-              }}><Text>AR</Text></TouchableOpacity>
+              }}><Text style = {{fontWeight: 'bold'}}>Base</Text></TouchableOpacity>
+            </View>
+            <View style = {{marginTop:'18%'}}>
+              <Text style = {{color:'black',fontSize:12}}>
+                <Text style={{fontWeight:'bold'}}>Detect</Text>: Detect a real circuit to convert it into an AR models.{"\n"}
+                <Text style={{fontWeight:'bold'}}>Base</Text>: Play IEEC with AR model from the beginning.
+              </Text>
             </View>
           </View>
         </Pressable>
