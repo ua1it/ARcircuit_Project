@@ -35,8 +35,8 @@ const HomeScreen = ({navigation}) => {
             </View>
             <View style = {{marginTop:'18%'}}>
               <Text style = {{color:'black',fontSize:12}}>
-                <Text style={{fontWeight:'bold'}}>Detect</Text>: Detect a real circuit to convert it into an AR models.{"\n"}
-                <Text style={{fontWeight:'bold'}}>Base</Text>: Play IEEC with AR model from the beginning.
+                <Text style={{fontWeight:'bold'}}>Detect</Text>{'\n'}Detect real circuit to convert it into an AR models.{"\n"}{'\n'}
+                <Text style={{fontWeight:'bold'}}>Base</Text>{'\n'}Play IEEC with AR model from the beginning.
               </Text>
             </View>
           </View>

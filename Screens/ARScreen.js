@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, Text, SafeAreaView, Button, PermissionsAndroid, Platform, View, TouchableOpacity } from 'react-native';
+import { Image, StyleSheet, Text, SafeAreaView, Button, PermissionsAndroid, Platform, View, TouchableOpacity, TouchableHighlight,ActivityIndicator } from 'react-native';
 import {
   ViroARScene,
   ViroText,
@@ -97,13 +97,26 @@ const HelloWorldSceneAR = () => {
 
 export default () => {
   return (
-    <ViroARSceneNavigator
-      autofocus={true}
-      initialScene={{
-        scene: HelloWorldSceneAR,
-      }}
-      style={styles.f1}
-    />
+    <View style = {{flex : 1}}>
+      <ViroARSceneNavigator
+        autofocus={true}
+        initialScene={{
+          scene: HelloWorldSceneAR,
+        }}
+      />
+      {/* <View style={{position:'absolute', left:0, right:0, top:0, bottom:0, alignItems: 'center', justifyContent:'center'}}>
+        <ActivityIndicator size='large' color='#ffffff'/>
+      </View> */}
+      <View style={{position: 'absolute',  left: 0, right: 0, bottom: 77, alignItems: 'center'}}>
+          <TouchableHighlight style={styles.buttons}
+            onPress={()=>{
+              console.log('Pressed Button')
+            }}
+            underlayColor={'#00000000'} >
+            <Image source={require("../images/btn_mode_objects.png")} />
+          </TouchableHighlight>
+        </View>
+    </View>
   );
 };
 
@@ -116,4 +129,16 @@ var styles = StyleSheet.create({
     textAlignVertical: 'center',
     textAlign: 'center',
   },
+  buttons: {
+    height: 80,
+    width: 80,
+    paddingTop:20,
+    paddingBottom:20,
+    marginTop: 10,
+    marginBottom: 10,
+    backgroundColor:'#00000000',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ffffff00',
+  }
 });
