@@ -11,7 +11,9 @@ import SplashScreen from 'react-native-splash-screen';
 import ARScreen from './Screens/ARScreen';
 
 const HomeScreen = ({navigation}) => {
+
   const [modalVisible, setModalVisible] = useState(false);
+
   return (
     <View style={styles.screen}>
       <Modal
@@ -25,12 +27,16 @@ const HomeScreen = ({navigation}) => {
             <View style = {{flexDirection: 'row', justifyContent:'space-between'}}>
               <TouchableOpacity style = {styles.modalButton} onPress = {()=>{
                 setModalVisible(!modalVisible);
-                navigation.navigate('ARScreen');
+                navigation.navigate('ARScreen',{
+                  state: 'detect'
+                });
               }}><Text style = {{fontWeight: 'bold'}}>Detect</Text></TouchableOpacity>
               <Text>{'   '}</Text>
               <TouchableOpacity style = {styles.modalButton} onPress = {()=>{
                 setModalVisible(!modalVisible);
-                navigation.navigate('ARScreen');
+                navigation.navigate('ARScreen',{
+                  state: 'base'
+                });
               }}><Text style = {{fontWeight: 'bold'}}>Base</Text></TouchableOpacity>
             </View>
             <View style = {{marginTop:'18%'}}>
@@ -188,6 +194,7 @@ const styles = StyleSheet.create({
     height: '9%',
     left: '56%',
     top: '20%',
+    marginTop:'-20%',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'transparent',
@@ -203,7 +210,7 @@ const styles = StyleSheet.create({
   },
   explainView: {
     marginLeft: '5%',
-    marginTop: '65%',
+    marginTop: '80%',
   },
   explainTitle: {
     color : 'black',

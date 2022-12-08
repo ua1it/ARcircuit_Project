@@ -118,7 +118,8 @@ class ARScreen extends Component {
 	}
 };
 
-export default () => {
+export default ({route}: Navigation) => {
+  console.log("state: "+route.params.state);
 	return (
 		<View style={{flex: 1}}>
 			<ViroARSceneNavigator
