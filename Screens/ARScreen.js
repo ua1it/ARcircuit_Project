@@ -11,7 +11,10 @@ import {
 	View,
 	TouchableOpacity,
 	TouchableHighlight,
-	ActivityIndicator
+	ActivityIndicator,
+  Modal,
+  Pressable,
+  TextInput,
 } from 'react-native';
 
 import {
@@ -114,10 +117,30 @@ function ARScreen(){
 };
 
 export default ({route}: Navigation) => {
-  console.log("state: "+route.params.state);
+  
+  const [modalVisible, setModalVisible] = useState(false);
+  const [code, setCode] = useState("void setup(){\n\t\n}\n" + "void loop(){\n\t\n}\n");
+
   detectOrBase = route.params.state;
 	return (
 		<View style={{flex: 1}}>
+      <Modal
+        animationType='slide'
+        transparent={true}
+        visible={modalVisible}
+      >
+        <Pressable style = {styles.centeredView} onPress = {() => setModalVisible(false)}>
+          <View style = {styles.modalView} >
+            <TextInput
+              multiline
+              style = {styles.codeInput}
+              selectionColor = 'black'
+              onChangeText = {setCode}
+              value = {code}
+            />
+          </View>
+        </Pressable>
+      </Modal>
       <ViroARSceneNavigator
         autofocus={true}
         initialScene={{scene: ARScreen,}}
@@ -133,8 +156,13 @@ export default ({route}: Navigation) => {
       }
       <View style={styles.handFrame}>
       <Text style = {styles.handTitleText}>HandControl here!</Text>
-
       </View>
+
+      <TouchableOpacity style={styles.codeBtn} onPress = {()=>{
+        setModalVisible(true);
+      }}>
+        <Text style = {{position: 'absolute',fontWeight:'500', color: 'yellow'}}>CODE</Text>
+      </TouchableOpacity>
       {/* <View style={styles.abs}>
         <TouchableHighlight
           style={styles.buttons}
@@ -200,5 +228,46 @@ var styles = StyleSheet.create({
 		borderRadius: 10,
 		borderWidth: 1,
 		borderColor: '#ffffff00',
-	}
+	},
+  codeBtn: {
+    position:'absolute',
+    justifyContent:'center',
+    alignItems:'center',
+    left:'2%',
+    bottom:'3%',
+    width:'6.5%',
+    height:'5%',
+    backgroundColor:'transparent',
+    borderRadius:20,
+    borderColor:'yellow',
+    borderWidth: 1,
+  },
+  centeredView: {
+    flex: 1,
+    marginTop: 22,
+  },
+  modalView: {
+    width:'70%',
+    height:'60%',
+    margin: 20,
+    backgroundColor: "white",
+    position: 'absolute',
+    borderRadius: 20,
+    padding: 10,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
+  codeInput: {
+    width:'100%',
+    height:'100%',
+    color:'black',
+  },
+
 });
