@@ -9,6 +9,12 @@ import platform
 from mss import mss
 from PIL import Image
 
+import mediapipe as mp
+mp_drawing = mp.solutions.drawing_utils
+mp_drawing_styles = mp.solutions.drawing_styles
+mp_hands = mp.solutions.hands
+
+
 app = Flask(__name__)
 
 @app.route('/users')
@@ -35,19 +41,39 @@ def users():
 def gen_crop_frames():
     mon = {'left': 160, 'top': 160, 'width': 800, 'height': 500}
     with mss() as sct:
-        while True:
-            screenShot = sct.grab(mon)
-            img = Image.frombytes(
-                'RGB',
-                (screenShot.width, screenShot.height),
-                screenShot.rgb,
-            )
-            img = np.array(img)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            ret, buffer = cv2.imencode('.jpg',img)
-            img = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + img + b'\r\n')
+        with mp_hands.Hands(
+            model_complexity=0,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5) as hands:
+            while True:
+                screenShot = sct.grab(mon)
+                img = Image.frombytes(
+                    'RGB',
+                    (screenShot.width, screenShot.height),
+                    screenShot.rgb,
+                )
+                image = np.array(img)
+
+                image.flags.writeable = False
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                results = hands.process(image)
+
+                # 이미지에 손 주석을 그립니다.
+                image.flags.writeable = True
+                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+                if results.multi_hand_landmarks:
+                    for hand_landmarks in results.multi_hand_landmarks:
+                        mp_drawing.draw_landmarks(
+                            image,
+                            hand_landmarks,
+                            mp_hands.HAND_CONNECTIONS,
+                            mp_drawing_styles.get_default_hand_landmarks_style(),
+                            mp_drawing_styles.get_default_hand_connections_style())
+                            
+                ret, buffer = cv2.imencode('.jpg',image)
+                image = buffer.tobytes()
+                yield (b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + image + b'\r\n')
 
 # @app.route('/video_feed')
 # def video_feed():
