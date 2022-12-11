@@ -1,6 +1,11 @@
-from flask import Flask # Flask
+from flask import Flask, render_template, Response
+from flask import request
+from flask import Response
+from flask import stream_with_context
+
 import numpy as np
 import cv2
+import platform
 from mss import mss
 from PIL import Image
 
@@ -12,28 +17,27 @@ def users():
     return {"members": [{ "id" : 1, "name" : "kim" },
     					{ "id" : 2, "name" : "Lee" }]}
 
-# @app.route('/opencv')
-# def opencv():
-#     mon = {'left': 160, 'top': 160, 'width': 800, 'height': 500}
-#     with mss() as sct:
-#         while True:
-#             screenShot = sct.grab(mon)
-#             img = Image.frombytes(
-#                 'RGB',
-#                 (screenShot.width, screenShot.height),
-#                 screenShot.rgb,
-#             )
-#             img = np.array(img)
+camera = cv2.VideoCapture(0)
 
-#             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+def gen_frames():  # generate frame by frame from camera
+    while True:
+        # Capture frame-by-frame
+        success, frame = camera.read()  # read the camera frame
+        if not success:
+            break
+        else:
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
 
-#             cv2.imshow('device screen', img)
-#             if cv2.waitKey(33) & 0xFF in (
-#                 ord('q'), 
-#                 27, 
-#             ):break
 
-           
+@app.route('/video_feed')
+def video_feed():
+    #Video streaming route. Put this in the src attribute of an img tag
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
 
 if __name__ == "__main__":
     app.run(debug = True)

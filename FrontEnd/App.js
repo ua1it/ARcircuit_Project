@@ -162,7 +162,7 @@ const App = () => {
   });
 
   useEffect(()=>{
-    fetch('http://127.0.0.1:5000/users').then(
+    fetch('http://127.0.0.1:5000/video_feed').then(
       res => res.json()
     ).then(
       data => console.log(data)
