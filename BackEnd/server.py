@@ -17,25 +17,46 @@ def users():
     return {"members": [{ "id" : 1, "name" : "kim" },
     					{ "id" : 2, "name" : "Lee" }]}
 
-camera = cv2.VideoCapture(0)
+#camera = cv2.VideoCapture(0)
 
-def gen_frames():  # generate frame by frame from camera
-    while True:
-        # Capture frame-by-frame
-        success, frame = camera.read()  # read the camera frame
-        if not success:
-            break
-        else:
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
+# def gen_frames():  # generate frame by frame from camera
+#     while True:
+#         # Capture frame-by-frame
+#         success, frame = camera.read()  # read the camera frame
+#         if not success:
+#             break
+#         else:
+#             ret, buffer = cv2.imencode('.jpg', frame)
+#             frame = buffer.tobytes()
+#             yield (b'--frame\r\n'
+#                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
+
+
+def gen_crop_frames():
+    mon = {'left': 160, 'top': 160, 'width': 800, 'height': 500}
+    with mss() as sct:
+        while True:
+            screenShot = sct.grab(mon)
+            img = Image.frombytes(
+                'RGB',
+                (screenShot.width, screenShot.height),
+                screenShot.rgb,
+            )
+            img = np.array(img)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            ret, buffer = cv2.imencode('.jpg',img)
+            img = buffer.tobytes()
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
+                   b'Content-Type: image/jpeg\r\n\r\n' + img + b'\r\n')
 
+# @app.route('/video_feed')
+# def video_feed():
+#     #Video streaming route. Put this in the src attribute of an img tag
+#     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/video_feed')
-def video_feed():
-    #Video streaming route. Put this in the src attribute of an img tag
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/video_crop')
+def video_crop():
+    return Response(gen_crop_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 
