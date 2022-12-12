@@ -122,12 +122,19 @@ export default ({route}: Navigation) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [code, setCode] = useState("void setup(){\n\t\n}\n" + "void loop(){\n\t\n}\n");
   const [loading, setLoading] = useState(true);
+  const [buildPressed, setBuildPressed] = useState(false);
+  const [buildState, setBuildState] = useState(false);
 
   useEffect(()=>{
     setTimeout(() => {
       setLoading(false);
     }, 2000);
   },[])
+
+  useEffect(()=>{
+    setBuildPressed(false);
+    setBuildState(false);
+  },[modalVisible])
 
   detectOrBase = route.params.state;
   if (!loading){
@@ -147,6 +154,35 @@ export default ({route}: Navigation) => {
                 onChangeText = {setCode}
                 value = {code}
               />
+              <TouchableOpacity onPress = {()=>{
+                setBuildPressed(true);
+                setTimeout(()=>{
+                  setBuildState(true);
+                  setModalVisible(false);
+                },2000);
+              }}
+                style = {{marginBottom:'30%', marginLeft:'60%'}}
+              >
+                {
+                  buildPressed === false ? (
+                    <Text style = {{fontWeight:'bold'}}>Build Project</Text>
+                  ):(
+                    buildState === false ? (
+                      <ActivityIndicator
+                        animating={true}
+                        color="#6D7177"
+                        size="small"
+                      />
+                    ):(
+                      <ActivityIndicator
+                        animating={true}
+                        color="#6D7177"
+                        size="small"
+                      />
+                    )
+                  )
+                }
+              </TouchableOpacity>
             </View>
           </Pressable>
         </Modal>
@@ -259,7 +295,7 @@ var styles = StyleSheet.create({
     marginTop: 22,
   },
   modalView: {
-    width:'60%',
+    width:'50%',
     height:'60%',
     margin: 20,
     backgroundColor: "white",
@@ -278,7 +314,7 @@ var styles = StyleSheet.create({
   },
   codeInput: {
     width:'100%',
-    height:'100%',
+    height:'90%',
     color:'black',
   },
 
