@@ -34,6 +34,7 @@ import {
 	ViroFlexView
 } from '@viro-community/react-viro';
 
+import LoadingScreen from './LoadingScreen';
 
 let detectOrBase = 'base';
 
@@ -120,60 +121,71 @@ export default ({route}: Navigation) => {
   
   const [modalVisible, setModalVisible] = useState(false);
   const [code, setCode] = useState("void setup(){\n\t\n}\n" + "void loop(){\n\t\n}\n");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(()=>{
+    setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+  },[])
 
   detectOrBase = route.params.state;
-	return (
-		<View style={{flex: 1}}>
-      <Modal
-        animationType='slide'
-        transparent={true}
-        visible={modalVisible}
-      >
-        <Pressable style = {styles.centeredView} onPress = {() => setModalVisible(false)}>
-          <View style = {styles.modalView} >
-            <TextInput
-              multiline
-              style = {styles.codeInput}
-              selectionColor = 'black'
-              onChangeText = {setCode}
-              value = {code}
-            />
-          </View>
-        </Pressable>
-      </Modal>
-      <ViroARSceneNavigator
-        autofocus={true}
-        initialScene={{scene: ARScreen,}}
-      />
-      {
-        route.params.state === 'detect'?(
-          <View style={styles.boardFrame}>
-            <Text style = {styles.boardTitleText}>Place your board in this area!</Text>
-          </View>
-        ):(
-          <View></View>
-        )
-      }
-      <View style={styles.handFrame}>
-      <Text style = {styles.handTitleText}>HandControl here!</Text>
-      </View>
+  if (!loading){
+    return (
+      <View style={{flex: 1}}>
+        <Modal
+          animationType='slide'
+          transparent={true}
+          visible={modalVisible}
+        >
+          <Pressable style = {styles.centeredView} onPress = {() => setModalVisible(false)}>
+            <View style = {styles.modalView} >
+              <TextInput
+                multiline
+                style = {styles.codeInput}
+                selectionColor = 'black'
+                onChangeText = {setCode}
+                value = {code}
+              />
+            </View>
+          </Pressable>
+        </Modal>
+        <ViroARSceneNavigator
+          autofocus={true}
+          initialScene={{scene: ARScreen,}}
+        />
+        {
+          route.params.state === 'detect'?(
+            <View style={styles.boardFrame}>
+              <Text style = {styles.boardTitleText}>Place your board in this area!</Text>
+            </View>
+          ):(
+            <View></View>
+          )
+        }
+        <View style={styles.handFrame}>
+        <Text style = {styles.handTitleText}>HandControl here!</Text>
+        </View>
 
-      <TouchableOpacity style={styles.codeBtn} onPress = {()=>{
-        setModalVisible(true);
-      }}>
-        <Text style = {{position: 'absolute',fontWeight:'500', color: 'yellow'}}>CODE</Text>
-      </TouchableOpacity>
-      {/* <View style={styles.abs}>
-        <TouchableHighlight
-          style={styles.buttons}
-          onPress={()=>{console.log('Pressed Button detect')}}
-          underlayColor={'#00000000'}
-          >
-          <Image source={require("../images/btn_mode_objects.png")}/>
-        </TouchableHighlight>
-      </View> */}
-		</View>
-	);
+        <TouchableOpacity style={styles.codeBtn} onPress = {()=>{
+          setModalVisible(true);
+        }}>
+          <Text style = {{position: 'absolute',fontWeight:'500', color: 'yellow'}}>CODE</Text>
+        </TouchableOpacity>
+        {/* <View style={styles.abs}>
+          <TouchableHighlight
+            style={styles.buttons}
+            onPress={()=>{console.log('Pressed Button detect')}}
+            underlayColor={'#00000000'}
+            >
+            <Image source={require("../images/btn_mode_objects.png")}/>
+          </TouchableHighlight>
+        </View> */}
+      </View>
+    );
+  } else {
+    return LoadingScreen();
+  }
 };
 
 var styles = StyleSheet.create({
@@ -247,13 +259,13 @@ var styles = StyleSheet.create({
     marginTop: 22,
   },
   modalView: {
-    width:'70%',
+    width:'60%',
     height:'60%',
     margin: 20,
     backgroundColor: "white",
     position: 'absolute',
     borderRadius: 20,
-    padding: 10,
+    padding: 25,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
