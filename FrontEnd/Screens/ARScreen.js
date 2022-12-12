@@ -15,6 +15,7 @@ import {
   Modal,
   Pressable,
   TextInput,
+  SectionList,
 } from 'react-native';
 
 import {
@@ -120,6 +121,7 @@ function ARScreen(){
 export default ({route}: Navigation) => {
   
   const [modalVisible, setModalVisible] = useState(false);
+  const [ARmodalVisible, setARModalVisible] = useState(false);
   const [code, setCode] = useState("void setup(){\n\t\n}\n" + "void loop(){\n\t\n}\n");
   const [loading, setLoading] = useState(true);
   const [buildPressed, setBuildPressed] = useState(false);
@@ -186,6 +188,37 @@ export default ({route}: Navigation) => {
             </View>
           </Pressable>
         </Modal>
+        <Modal
+          animationType='slide'
+          transparent={true}
+          visible={ARmodalVisible}
+        >
+          <View style = {styles.centeredView}>
+            <View style = {[styles.modalView,{padding:0, alignItems:'flex-start', paddingLeft:'3.5%',paddingTop:'3%',width:'25.5%'}]}>
+              <SafeAreaView style = {styles.modelListView}>
+                <SectionList
+                  sections = {[
+                    {title: 'basic', data: ['electric wire', 'led', 'register', 'button', 'buzzer', 'potentiometer', 'photoresistor',
+                    'hc-sr04']},
+                    {title: 'more', data: ['hdx-2801', '7 segement led', 'dot matrix display', '74hc595', 'flame sensor', 
+                    'hc-sr505', 'rgb led module', 'voice sensor', 'sg-90 servo', '16x2 lcd', 'ky-0009 smd rgb led']},
+                  ]}
+                  renderItem={({item}) => <TouchableOpacity 
+                    onPress={()=>{
+                      console.log(item)
+                      setARModalVisible(false)
+                  }}>
+                      <Text style={styles.item}>{item}</Text>
+                    </TouchableOpacity>}
+                  renderSectionHeader={({section}) => <Text style={styles.sectionHeader}>{section.title}</Text>}
+                  keyExtractor={(item, index) => item+index}
+                />
+              </SafeAreaView>
+              
+            </View>
+            <TouchableOpacity style = {{left:'30%', top:'60%', position:'absolute'}} onPress =  {()=>setARModalVisible(false)}><Text style = {{color: 'white'}}>Close</Text></TouchableOpacity>
+          </View>
+        </Modal>
         <ViroARSceneNavigator
           autofocus={true}
           initialScene={{scene: ARScreen,}}
@@ -202,12 +235,16 @@ export default ({route}: Navigation) => {
         <View style={styles.handFrame}>
         <Text style = {styles.handTitleText}>HandControl here!</Text>
         </View>
-
         <TouchableOpacity style={styles.codeBtn} onPress = {()=>{
           setModalVisible(true);
         }}>
-          <Text style = {{position: 'absolute',fontWeight:'500', color: 'yellow'}}>CODE</Text>
+          <Text style = {{position: 'absolute',fontWeight:'500', color: 'white'}}>CODE</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.ARBtn} onPress = {()=>{
+          setARModalVisible(true);
+        }}>
+          <Text style = {{position: 'absolute',fontWeight:'500', color: 'white'}}>MODELS</Text>
+        </TouchableOpacity>          
         {/* <View style={styles.abs}>
           <TouchableHighlight
             style={styles.buttons}
@@ -282,12 +319,25 @@ var styles = StyleSheet.create({
     justifyContent:'center',
     alignItems:'center',
     left:'2%',
-    bottom:'3%',
-    width:'6.5%',
+    bottom:'6%',
+    width:'7%',
     height:'5%',
     backgroundColor:'transparent',
     borderRadius:20,
-    borderColor:'yellow',
+    borderColor:'white',
+    borderWidth: 1,
+  },
+  ARBtn: {
+    position:'absolute',
+    justifyContent:'center',
+    alignItems:'center',
+    left:'9.7%',
+    bottom:'6%',
+    width:'10%',
+    height:'5%',
+    backgroundColor:'transparent',
+    borderRadius:20,
+    borderColor:'white',
     borderWidth: 1,
   },
   centeredView: {
@@ -299,7 +349,7 @@ var styles = StyleSheet.create({
     height:'60%',
     margin: 20,
     backgroundColor: "white",
-    position: 'absolute',
+    position: "absolute",
     borderRadius: 20,
     padding: 25,
     alignItems: "center",
@@ -312,10 +362,28 @@ var styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5
   },
+  modelListView: {
+    flex: 1,
+    height: "100%",
+  },
   codeInput: {
     width:'100%',
     height:'90%',
     color:'black',
+  },
+  item: {
+    padding: 10,
+    fontSize: 13,
+    height: 44,
+  },
+  sectionHeader: {
+    paddingTop: 2,
+    paddingLeft: 10,
+    paddingRight: 10,
+    paddingBottom: 2,
+    fontSize: 14,
+    fontWeight: 'bold',
+    backgroundColor: 'rgba(247,247,247,1.0)',
   },
 
 });
