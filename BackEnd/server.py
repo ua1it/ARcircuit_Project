@@ -2,7 +2,7 @@ from flask import Flask, render_template, Response
 from flask import request
 from flask import Response
 from flask import stream_with_context
-
+import os
 import numpy as np
 import cv2
 import platform
@@ -10,6 +10,8 @@ from mss import mss
 from PIL import Image
 
 import mediapipe as mp
+
+from detect import main
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mp_hands = mp.solutions.hands
@@ -18,25 +20,11 @@ mp_hands = mp.solutions.hands
 app = Flask(__name__)
 
 @app.route('/users')
-def users():
-	# users 데이터를 Json 형식으로 반환한다
-    return {"members": [{ "id" : 1, "name" : "kim" },
-    					{ "id" : 2, "name" : "Lee" }]}
-
-#camera = cv2.VideoCapture(0)
-
-# def gen_frames():  # generate frame by frame from camera
-#     while True:
-#         # Capture frame-by-frame
-#         success, frame = camera.read()  # read the camera frame
-#         if not success:
-#             break
-#         else:
-#             ret, buffer = cv2.imencode('.jpg', frame)
-#             frame = buffer.tobytes()
-#             yield (b'--frame\r\n'
-#                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
-
+def file_read():
+	# 인식된 부품 파일 읽기
+    f = open("./runs/labels/im.txt")
+    lines = f.readlines()
+    return lines
 
 def gen_crop_frames():
     mon = {'left': 160, 'top': 160, 'width': 800, 'height': 500}
@@ -53,7 +41,7 @@ def gen_crop_frames():
                     screenShot.rgb,
                 )
                 image = np.array(img)
-
+                
                 image.flags.writeable = False
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 results = hands.process(image)
@@ -69,18 +57,50 @@ def gen_crop_frames():
                             mp_hands.HAND_CONNECTIONS,
                             mp_drawing_styles.get_default_hand_landmarks_style(),
                             mp_drawing_styles.get_default_hand_connections_style())
-
+                            
                 ret, buffer = cv2.imencode('.jpg',image)
                 image = buffer.tobytes()
                 yield (b'--frame\r\n'
                     b'Content-Type: image/jpeg\r\n\r\n' + image + b'\r\n')
+@app.route('/det_components')                
+def det_components():
+    mon = {'left': 160, 'top': 160, 'width': 800, 'height': 500}
+    #os.remove("./img/im.jpg")
+    with mss() as sct:
 
+        while True:
+            screenShot = sct.grab(mon)
+            img = Image.frombytes(
+                'RGB',
+                (screenShot.width, screenShot.height),
+                screenShot.rgb,
+            )
+            image = np.array(img)
+            image.flags.writeable = False
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            cv2.imwrite("./img/im.jpg", image)
+            ret, buffer = cv2.imencode('.jpg',image)
+            main()
+            if(os.path.isfile("./runs/labels/im.txt")):
+                f = open("./runs/labels/im.txt")
+                lines = f.readlines()
+                return lines
+            else:
+                image = buffer.tobytes()
+                yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + image + b'\r\n')
+                #f = open("./runs/labels/im.txt")
+                #lines = f.readline()
+                #return lines
 # @app.route('/video_feed')
 # def video_feed():
 #     #Video streaming route. Put this in the src attribute of an img tag
 #     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/video_crop')
+@app.route('/video_components')
+def video_components():
+    return Response(det_components(), mimetype='multipart/x-mixed-replace; boundary=frame')
 def video_crop():
     return Response(gen_crop_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
