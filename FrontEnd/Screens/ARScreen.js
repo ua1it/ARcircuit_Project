@@ -48,8 +48,15 @@ function ARScreen(){
     }
   },[hasARInitialized])
 
+  console.log("test");
+  const pressHandler = (e) => {
+    console.log(e.nativeEvent.pageX);
+    console.log(e.nativeEvent.pageY);
+    this.animation.play();
+  };
+
 		return (
-			<View>
+			<View onPress={pressHandler} >
 				<ViroARScene>
 					<ViroText
 						text={text}
@@ -163,6 +170,10 @@ export default ({route}: Navigation) => {
       }}>
         <Text style = {{position: 'absolute',fontWeight:'500', color: 'yellow'}}>CODE</Text>
       </TouchableOpacity>
+
+
+
+
       {/* <View style={styles.abs}>
         <TouchableHighlight
           style={styles.buttons}
