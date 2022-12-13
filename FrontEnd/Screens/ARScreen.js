@@ -52,7 +52,7 @@ function ARScreen(){
 
 		return (
 			<View>
-				<ViroARScene>
+				<ViroARScene onClick={(position, source) => console.log('Click', position, source)}>
 					<ViroText
 						text={text}
 						scale={[0.5, 0.5, 0.5]}
