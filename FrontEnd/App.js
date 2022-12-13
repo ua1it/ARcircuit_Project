@@ -19,35 +19,31 @@ import SplashScreen from 'react-native-splash-screen';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 
 //Screens
-import ARScreen from './Screens/ARScreen';
+import ARMain from './Screens/ARMain';
 
 const HomeScreen = ({navigation}) => {
 
   const [modalVisible, setModalVisible] = useState(false);
 
-  return (
-    <View style={styles.screen}>
+  getSelection = () => {
+    return (
       <Modal
         animationType='slide'
         transparent={true}
         visible={modalVisible}
-      >
+        >
         <Pressable style = {styles.centeredView} onPress = {() => setModalVisible(false)}>
-          <View style = {styles.modalView} >
+          <View style = {styles.modalView}>
             <Text style = {{fontWeight: 'bold', fontSize: 18}}>Choose Your State</Text>
             <View style = {{flexDirection: 'row', justifyContent:'space-between'}}>
               <TouchableOpacity style = {styles.modalButton} onPress = {()=>{
                 setModalVisible(!modalVisible);
-                navigation.navigate('ARScreen',{
-                  state: 'detect'
-                });
+                navigation.navigate('ARMain', { state: 'detect' });
               }}><Text style = {{fontWeight: 'bold'}}>Detect</Text></TouchableOpacity>
               <Text>{'   '}</Text>
               <TouchableOpacity style = {styles.modalButton} onPress = {()=>{
                 setModalVisible(!modalVisible);
-                navigation.navigate('ARScreen',{
-                  state: 'base'
-                });
+                navigation.navigate('ARMain', { state: 'base' });
               }}><Text style = {{fontWeight: 'bold'}}>Base</Text></TouchableOpacity>
             </View>
             <View style = {{marginTop:'18%'}}>
@@ -59,6 +55,11 @@ const HomeScreen = ({navigation}) => {
           </View>
         </Pressable>
       </Modal>
+    );
+  }
+
+  getBackground = () => {
+    return (
       <ImageBackground source={require("./images/homeImage.jpg")} resizeMode="cover" style={styles.image}>
         <View style = {styles.titleView}>
           <Text style = {styles.title}>
@@ -83,6 +84,14 @@ const HomeScreen = ({navigation}) => {
           </Text>
         </View>
       </ImageBackground>
+    );
+  }
+
+  return (
+    <View style={styles.screen}>
+      {getSelection()}
+      {getBackground()}
+      
     </View>
   )
 }
@@ -161,13 +170,13 @@ const App = () => {
     }
   });
 
-  useEffect(()=>{
+  {/*useEffect(()=>{
     fetch('http://127.0.0.1:5000/users').then(
       res => res.json()
     ).then(
       data => console.log(data)
     )
-  },[])
+  },[])*/}
   
   return (
     //네비게이션의 트리를 관리해주는 컴포넌트
@@ -180,7 +189,7 @@ const App = () => {
         {/* 해당스택에 들어갈 화면 요소를 넣어준다. */}
         <Stack.Screen name="Home" component={HomeScreen} options={{headerShown: false}}/>
         {/* <Stack.Screen name="Details" component={DetailsScreen}/> */}
-        <Stack.Screen name="ARScreen" component={ARScreen} options={{headerShown: false}}/>
+        <Stack.Screen name="ARMain" component={ARMain} options={{headerShown: false}}/>
       </Stack.Navigator>
     </NavigationContainer>
   )
