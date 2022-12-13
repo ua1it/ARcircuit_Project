@@ -1,13 +1,13 @@
 'use strict';
 
-import { NativeSyntheticEvent } from "react-native";
+import React from 'react';
 
-import { Viro3DObject, ViroMaterials, ViroCameraARHitTestEvent } from '@viro-community/react-viro';
-import { MathUtils } from '../Util/MathUtils'
+import { Viro3DObject, ViroSpotLight, ViroQuad, ViroNode } from '@viro-community/react-viro';
+import MathUtils from '../Util/MathUtils'
 
 
-const sizeConstants = {
-    // length constants - based on gltf (scale = 100)
+export const sizeConstants = {
+    // length constants - based on gltf (scale = 1.0)
     horizontal: 1625,
     vertical: 550,
     height: 96,
@@ -26,121 +26,116 @@ const sizeConstants = {
     vert_neg_bottom: 495, // y = vertical - neg.y - distance
 
     // size flexiblity
-    flexiblity: 20
+    flexiblity: 20,
+
+    scale: 0.0005
 };
 
-export default class Breadboard extends Viro3DObject
+export default class Breadboard
 {
-    constructor(props)
+    static init(data)
     {
-        super(props);
-        this.state = {
-            texture: 'default',
-            current_port: -1
-        };
+        data.get = Breadboard.getRender.bind(data);
+
+        data.node_props.position = [0, -.5, -.5];
+        data.node_props.dragType = 'FixedDistance'
+        data.node_props.onDrag = Breadboard.onDrag.bind(data);
+        data.node_props.onClick = Breadboard.onClick.bind(data);
+
+        data.props.position = [0, 0, 0];
+        data.props.rotation = [0, 0, 0];
+        data.props.scale = [sizeConstants.scale, sizeConstants.scale, sizeConstants.scale];
     }
 
-    render()
+    static getRender(index)
     {
         const source = require('./res/arduino_breadboard_-_low_poly.glb');
         const resources = [require('./res/breadboard_color.png'), require('./res/breadboard_normal.png')];
 
         return (
-            <Viro3DObject
-                source={source}
-                position={this.props.position}
-                scale={this.props.scale}
-                resources={resources}
-                type='GLB'
-                lightReceivingBitMask={3}
-                shadowCastingBitMask={2}
-                />
+            <ViroNode key={index} {...this.node_props}>
+                <ViroSpotLight
+                    innerAngle={5}
+                    outerAngle={45}
+                    direction={[0, -1, -.2]}
+                    position={[0, 7, 0]}
+                    color="#ffffff"
+                    castsShadow={true}
+                    influenceBitMask={2}
+                    shadowMapSize={2048}
+                    shadowNearZ={2}
+                    shadowFarZ={5}
+                    shadowOpacity={.7}
+                    />
+                <Viro3DObject
+                    {...this.props}
+                    source={source}
+                    resources={resources}
+                    type='GLB'
+                    lightReceivingBitMask={3}
+                    shadowCastingBitMask={2}
+                    />
+                <ViroQuad
+                    rotation={[-90, 0, 0]}
+                    width={.5} height={.5}
+                    arShadowReceiver={true}
+                    lightReceivingBitMask={2}
+                    />
+            </ViroNode>
         );
     }
 
-    _onCameraTransformUpdate = (event) => {
-        var results = {
-            hitTestResults: event.nativeEvent.hitTestResults,
-            cameraOrientation: {
-                position: [
-                    event.nativeEvent.cameraOrientation[0],
-                    event.nativeEvent.cameraOrientation[1],
-                    event.nativeEvent.cameraOrientation[2],
-                ],
-                rotation: [
-                    event.nativeEvent.cameraOrientation[3],
-                    event.nativeEvent.cameraOrientation[4],
-                    event.nativeEvent.cameraOrientation[5],
-                ],
-                forward: [
-                    event.nativeEvent.cameraOrientation[6],
-                    event.nativeEvent.cameraOrientation[7],
-                    event.nativeEvent.cameraOrientation[8],
-                ],
-                up: [
-                    event.nativeEvent.cameraOrientation[9],
-                    event.nativeEvent.cameraOrientation[10],
-                    event.nativeEvent.cameraOrientation[11],
-                ],
-            },
-        };
-        
-        if (results.lnegth <= 0)
-        {
-            this.setState({current_port: -1});
-            return;
-        }
+    static onClick(position, source)
+    {
+        var port = Breadboard.computePort(MathUtils.vecAdd(this.node_props.position, this.props.position), this.props.rotation, position);
+        console.log('Port:', port);
+    }
 
-        // first confilcted result only
-        var result = results.length[1];
-        console.log(result);
+    static onDrag(position, source)
+    {
+        this.node_props.position = MathUtils.vecCopy(position);
+    }
 
-        if (result.type != "ExistingPlaneUsingExtent")
-            return;
-        
-        console.log(result.transform.position);
-        this._computePort(result.transform.position);
-    };
-
-    static computePort(vecEnd)
+    static computePort(position, rotation, vecEnd)
     {
         // make it clear that the linetrace ended with the first plane.
 
         // plane = horizontal vector + a coordinate in plane
-        let plane_h = this.props.rotation;
-        var dist = this.props.scale[2] * sizeConstants.height / 2;
+        var plane_h = MathUtils.rotateX([0, 1, 0], rotation[0]);
+        plane_h = MathUtils.rotateY(plane_h, rotation[1]);
+        plane_h = MathUtils.rotateZ(plane_h, rotation[2]);
+
+        var dist = sizeConstants.scale * sizeConstants.height / 2;
 
         // center of upper plane
-        let src_center = MathUtils.vecCopy(this.props.posiiton);
-        src_center[2] += dist;
+        let src_center = MathUtils.vecCopy(position);
+        src_center[1] += dist;
 
         // compute rotation
-        let plane_c = MathUtils.rotateX(src_center, plane_h[0]);
-        plane_c = MathUtils.rotateY(plane_c, plane_h[1]);
-        plane_c = MathUtils.rotateZ(plane_c, plane_h[2]);
+        var plane_c = MathUtils.rotateX(src_center, rotation[0]);
+        plane_c = MathUtils.rotateY(plane_c, rotation[1]);
+        plane_c = MathUtils.rotateZ(plane_c, rotation[2]);
 
         // compute distance
-        // product(vecEnd + k * plane_horizontal, plane_coordinate) = 0
-        // (vecEnd[0] + k * h[0]) * p[0] + (vecEnd[1] + k * h[1]) * p[1] + (vecEnd[2] + k * h[2]) * p[2] = 0
-        // p[0]vecEnd[0] + p[1]vecEnd[1] + p[2]vecEnd[2] + k(h[0] + h[1] + h[2]) = 0
-        // k = -1 * (product(vecEnd, p)) / (h[0] + h[1] + h[2]);
-        // target = vecEnd + k * h = vecEnd - (product(vecEnd, p)) / (h[0] + h[1] + h[2]) * h
+        // product(vecEnd + k * plane_horizontal - plane_coordinate, plane_horizontal) = 0
+        // (vecEnd[0] + k * h[0] - p[0]) * h[0] + (vecEnd[1] + k * h[1] - p[1]) * h[1] + (vecEnd[2] + k * h[2] - p[2]) * h[2] = 0
+        // (h[0]vecEnd[0] + h[1]vecEnd[1] + h[2]vecEnd[2]) + k(h[0]h[0] + h[1]h[1] + h[2]h[2]) - (p[0]h[0] + p[1]h[1] + p[2]h[2]) = 0
+        // k = (product(h, p) - product(vecEnd, h)) / (product(h, h));
+        // target = vecEnd + k * h = vecEnd + (product(h, p) - product(vecEnd, h)) / (product(h, h)) * h
 
         // k
-        var multiplier = -1 * MathUtils.vecProduct(vecEnd, plane_c) / (plane_h[0] + plane_h[1] + plane_h[2]);
+        var multiplier = (MathUtils.vecInnerProduct(plane_h, plane_c) - MathUtils.vecInnerProduct(vecEnd, plane_h)) / MathUtils.vecInnerProduct(plane_h, plane_h);
 
         // k * h
         var scaled_h = MathUtils.vecScale(plane_h, multiplier);
 
         // target
         let target = MathUtils.vecAdd(vecEnd, scaled_h);
-        console.log(target);
 
         // compute reverse rotation (make its rotation = [0, 0, 0])
-        target = MathUtils.rotateX(target, -plane_h[0]);
-        target = MathUtils.rotateY(target, -plane_h[1]);
-        target = MathUtils.rotateZ(target, -plane_h[2]);
-        console.log(target);
+        target = MathUtils.rotateX(target, -rotation[0]);
+        target = MathUtils.rotateY(target, -rotation[1]);
+        target = MathUtils.rotateZ(target, -rotation[2]);
 
         // get horizontal and vertical distance between points
         let vecDist = [
@@ -148,7 +143,6 @@ export default class Breadboard extends Viro3DObject
             target[1] - src_center[1],
             target[2] - src_center[2]
         ];
-        console.log(vecDist);
 
         // result
         let result_port = -1;
@@ -156,35 +150,31 @@ export default class Breadboard extends Viro3DObject
         // compute port coordinates here...
 
         // align position top-left from center
-        let horizontal = vecDist[0] - sizeConstants.horizontal / 2 * this.props.scale[0];
-        let vertical = vecDist[1] - sizeConstants.vertical / 2 * this.props.scale[1];
-
-        var avgsize = (this.props.scale[0] + this.props.scale[1] + this.props.scale[2]) / 3;
+        let horizontal = vecDist[0] + sizeConstants.horizontal / 2 * sizeConstants.scale;
+        let vertical = vecDist[2] + sizeConstants.vertical / 2 * sizeConstants.scale;
 
         // out of breadboard - no ports chossed!
-        if (horizontal <= 0 || horizontal >= sizeConstants.horizontal * this.props.scale[0]
-            || vertical <= 0 || vertical >= sizeConstants.vertical * this.props.scale[1]
-            || Math.abs(vecDist[2]) >= sizeConstants.flexiblity * avgsize)
+        if (horizontal <= 0 || horizontal >= sizeConstants.horizontal * sizeConstants.scale
+            || vertical <= 0 || vertical >= sizeConstants.vertical * sizeConstants.scale
+            || Math.abs(vecDist[1]) >= (sizeConstants.flexiblity + sizeConstants.height / 2) * sizeConstants.scale)
         {
-            result_port = -1;
+            
         }
         else
         {
             var heights = [
-                (sizeConstants.coord_neg[1] - sizeConstants.flexiblity / 2) * this.props.scale[1],
-                (sizeConstants.coord_j[1] - sizeConstants.flexiblity / 2) * this.props.scale[1],
-                (sizeConstants.vert_e - sizeConstants.flexiblity / 2) * this.props.scale[1],
-                (sizeConstants.vert_neg_bottom - sizeConstants.flexiblity / 2) * this.props.scale[1]
+                (sizeConstants.coord_neg[1] - sizeConstants.flexiblity / 2) * sizeConstants.scale,
+                (sizeConstants.coord_j[1] - sizeConstants.flexiblity / 2) * sizeConstants.scale,
+                (sizeConstants.vert_e - sizeConstants.flexiblity / 2) * sizeConstants.scale,
+                (sizeConstants.vert_neg_bottom - sizeConstants.flexiblity / 2) * sizeConstants.scale
             ];
     
-            for (var i = 0; i < heights.length; i++)
+            for (var i = 3; i >= 0; i--)
             {
-                if (vertical < heights[i])
+                if (vertical >= heights[i])
                 {
-                    if (result_port != -1)
-                        break;
-
                     result_port = i;
+                    break;
                 }
             }
         }
@@ -202,11 +192,11 @@ export default class Breadboard extends Viro3DObject
                 case 1, 2: min_x = sizeConstants.coord_j[0]; break;
             }
             min_x -= sizeConstants.flexiblity;
-            min_x *= this.props.scale[0];
+            min_x *= sizeConstants.scale;
 
             if (horizontal >= min_x)
             {
-                x = parseInt((horizontal - min_x) / sizeConstants.distance / avgsize);
+                x = parseInt((horizontal - min_x) / sizeConstants.distance / sizeConstants.scale);
                 switch (y)
                 {
                     case 0, 3:
@@ -224,7 +214,7 @@ export default class Breadboard extends Viro3DObject
 
             if (result_port != -1)
             {
-                var y = parseInt((vertical - heights[j]) / sizeConstants.distance / avgsize);
+                y = parseInt((vertical - heights[result_port]) / sizeConstants.distance / sizeConstants.scale);
                 switch (result_port)
                 {
                     case 0, 3:
@@ -243,8 +233,7 @@ export default class Breadboard extends Viro3DObject
             }
         }
 
-        console.log(result_port);
-        this.setState({current_port: result_port});
+        return result_port;
     }
 }
 
