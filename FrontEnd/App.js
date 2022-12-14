@@ -170,13 +170,13 @@ const App = () => {
     }
   });
 
-  {/*useEffect(()=>{
+  useEffect(()=>{
     fetch('http://127.0.0.1:5000/users').then(
       res => res.json()
     ).then(
       data => console.log(data)
     )
-  },[])*/}
+  },[])
   
   return (
     //네비게이션의 트리를 관리해주는 컴포넌트
