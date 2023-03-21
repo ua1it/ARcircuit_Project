@@ -5,10 +5,10 @@ import React from 'react';
 import { Viro3DObject, ViroSpotLight, ViroQuad, ViroNode } from '@viro-community/react-viro';
 
 import { PinState } from 'avr8js';
-import { buildHex } from './compile';
-import { CPUPerformance } from './cpu-performance';
-import { AVRRunner } from './execute';
-import { formatTime } from './format-time';
+import { buildHex } from './src/compile';
+import { CPUPerformance } from './src/cpu-performance';
+import { AVRRunner } from './src/execute';
+import { formatTime } from './src/format-time';
 
 export default class ArduinoUno
 {
@@ -73,7 +73,7 @@ export default class ArduinoUno
         );
     }
 	
-	compile(code)
+	async compile(code)
 	{
 		try {
 			console.log('in compiling...');
