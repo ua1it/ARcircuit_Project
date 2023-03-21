@@ -15,6 +15,7 @@ export default class ArduinoUno
     static init(data)
     {
         data.get = ArduinoUno.getRender.bind(data);
+        data.onCompile = ArduinoUno._compile.bind(data);
 
         data.node_props.position = [0, -.5, -.5];
         data.node_props.dragType = 'FixedDistance'
@@ -73,28 +74,28 @@ export default class ArduinoUno
         );
     }
 	
-	async compile(code)
+	static _compile(code)
 	{
-		try {
-			console.log('in compiling...');
-			const result = await buildHex(code);
-			console.log(`${result.stderr || result.stdout}`);
-			if (result.hex) {
-				console.log('on loading...');
-				execute(result.hex);
-			}
-		} catch (err) {
-			console.log('Failed: ' + err);
-		}
+        const run = async() => {
+            try {
+                console.log('in compiling...');
+                const result = await buildHex(code);
+                console.log(`${result.stderr || result.stdout}`);
+                if (result.hex) {
+                    console.log('on loading...');
+                    ArduinoUno._execute(this, result.hex);
+                }
+            } catch (err) {
+                console.log('Failed: ' + err);
+            }
+        }
+        run();
 	}
 	
-	execute(hex)
+	static _execute(data, hex)
 	{
-		if (data.extra == undefined)
-			data.extra = {};
-		
-		data.extra.runner = new AVRRunner(hex);
-		const mhz = 16e+6;
+		var runner = new AVRRunner(hex);
+		const MHZ = 16e+6;
 		
 		// Hook to PORTB register
 		runner.portB.addListener(() => {

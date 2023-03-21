@@ -18,15 +18,22 @@ import {
 	SectionList,
 } from 'react-native';
 
-import {
-	ViroARSceneNavigator
-} from '@viro-community/react-viro';
+import { ViroARSceneNavigator } from '@viro-community/react-viro';
 
 import LoadingScreen from './LoadingScreen';
-
-import { ARCircuitScene, opCode, BasicCircuit, AdvancedCircuit } from './ARCircuitScene'
+import { ARCircuitScene, opCode, BasicCircuit, AdvancedCircuit } from './ARCircuitScene';
 
 let detectOrBase = 'base';
+
+const default_code = `// Enter code here
+
+void setup() {
+
+}
+
+void loop() {
+
+}`;
 
 export default class ARMain extends Component {
   
@@ -36,7 +43,7 @@ export default class ARMain extends Component {
       modalVisible: false,
       ARmodalVisible: false,
 
-      code: "void setup(){\n\t\n}\nvoid loop(){\n\t\n}\n",
+      code: default_code,
       loading: true,
 
       buildPressed: false,
@@ -73,7 +80,9 @@ export default class ARMain extends Component {
               setTimeout(()=>{
                 this.setState({
                   buildState: true,
-                  modalVisible: false
+                  modalVisible: false,
+                  operation: opCode.COMPILE,
+                  target: this.state.code
                 });
               },2000);
             }}
@@ -83,7 +92,7 @@ export default class ARMain extends Component {
                 this.state.buildPressed === false ? (
                   <Text style={{fontWeight:'bold'}}>Build Project</Text>
                 ) : (
-                  buildState === false ? (
+                  this.state.buildState === false ? (
                     <ActivityIndicator
                       animating={true}
                       color="#6D7177"

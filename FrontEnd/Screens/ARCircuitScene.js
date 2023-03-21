@@ -12,7 +12,8 @@ const opCode =
 {
     IDLE: -1,
     CREATE: 0,
-    REMOVE: 1
+    REMOVE: 1,
+    COMPILE: 2,
 };
 
 const BasicCircuit =
@@ -54,6 +55,8 @@ const ComponentProps =
     movable: false,
     editable: false,
 
+    onCompile: undefined,
+
     extra: undefined
 };
 
@@ -92,7 +95,7 @@ class ARCircuitScene extends React.Component
         }
 
         this.components.push(data);
-        return this.components.length;
+        return this.components.length - 1;
     }
 
     _removeComponent(index)
@@ -101,6 +104,18 @@ class ARCircuitScene extends React.Component
             return;
         
         this.components.splice(index, 1);
+    }
+
+    _onCompile(code)
+    {
+        console.log('do compile: ' + code);
+        for (var i = 0; i < this.components.length; i++)
+        {
+            if (this.components[i].onCompile == undefined)
+                continue;
+
+            this.components[i].onCompile(code);
+        }
     }
 
     _onClick(position, source)
@@ -124,11 +139,13 @@ class ARCircuitScene extends React.Component
             switch (operation)
             {
                 case opCode.CREATE:
+                    this._createComponent(source);
+                    break;
                 case opCode.REMOVE:
-                    if (operation == opCode.CREATE)
-                        this._createComponent(source);
-                    else
-                        this._removeComponent(source);
+                    this._removeComponent(source);
+                    break;
+                case opCode.COMPILE:
+                    this._onCompile(source);
                     break;
             }
         }
