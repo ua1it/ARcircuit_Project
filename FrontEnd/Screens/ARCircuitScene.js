@@ -35,7 +35,7 @@ const AdvancedCircuit =
     '7 Segment LED',
     'Dot Matrix Display',
     '74HC595',
-    'Flame Sensor',
+    //'Flame Sensor',
     'HC-SR505',
     'RGB LED Module',
     'Voice Sensor',
@@ -88,7 +88,7 @@ class ARCircuitScene extends React.Component
         {
             case 0: ArduinoUno.init(data); break;
             case 1: Breadboard.init(data); break;
-            default: return;
+            default: return -1;
         }
 
         this.components.push(data);

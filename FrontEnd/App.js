@@ -91,7 +91,6 @@ const HomeScreen = ({navigation}) => {
     <View style={styles.screen}>
       {getSelection()}
       {getBackground()}
-      
     </View>
   )
 }

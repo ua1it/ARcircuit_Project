@@ -12,27 +12,14 @@ import {
 	TouchableOpacity,
 	TouchableHighlight,
 	ActivityIndicator,
-  Modal,
-  Pressable,
-  TextInput,
-  SectionList,
+	Modal,
+	Pressable,
+	TextInput,
+	SectionList,
 } from 'react-native';
 
 import {
-	ViroARScene,
-	ViroText,
-	ViroButton,
-	ViroTrackingStateConstants,
-	ViroARSceneNavigator,
-	Viro3DObject,
-	ViroAmbientLight,
-	ViroSpotLight,
-	ViroARPlaneSelector,
-	ViroNode,
-	ViroQuad,
-	ViroAnimations,
-	ViroCamera,
-	ViroFlexView
+	ViroARSceneNavigator
 } from '@viro-community/react-viro';
 
 import LoadingScreen from './LoadingScreen';

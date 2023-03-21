@@ -4,6 +4,12 @@ import React from 'react';
 
 import { Viro3DObject, ViroSpotLight, ViroQuad, ViroNode } from '@viro-community/react-viro';
 
+import { PinState } from 'avr8js';
+import { buildHex } from './compile';
+import { CPUPerformance } from './cpu-performance';
+import { AVRRunner } from './execute';
+import { formatTime } from './format-time';
+
 export default class ArduinoUno
 {
     static init(data)
@@ -66,6 +72,50 @@ export default class ArduinoUno
             </ViroNode>
         );
     }
+	
+	compile(code)
+	{
+		try {
+			console.log('in compiling...');
+			const result = await buildHex(code);
+			console.log(`${result.stderr || result.stdout}`);
+			if (result.hex) {
+				console.log('on loading...');
+				execute(result.hex);
+			}
+		} catch (err) {
+			console.log('Failed: ' + err);
+		}
+	}
+	
+	execute(hex)
+	{
+		if (data.extra == undefined)
+			data.extra = {};
+		
+		data.extra.runner = new AVRRunner(hex);
+		const mhz = 16e+6;
+		
+		// Hook to PORTB register
+		runner.portB.addListener(() => {
+			console.log("port B: ", 
+			runner.portB.pinState(4),
+			runner.portB.pinState(5)
+			);
+		});
+		runner.usart.onByteTransmit = (value) => {
+			console.log("serial: ",
+			String.fromCharCode(value)
+			);
+		};
+		
+		const cpuPerf = new CPUPerformance(runner.cpu, MHZ);
+		runner.execute((cpu) => {
+			const time = formatTime(cpu.cycles / MHZ);
+			const speed = (cpuPerf.update() * 100).toFixed(0);
+			console.log(`Simulation time: ${time} (${speed}%)`);
+		});
+	}
 }
 
 module.exports = ArduinoUno;
