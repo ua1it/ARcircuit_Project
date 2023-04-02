@@ -6,9 +6,12 @@ import { ViroAmbientLight, ViroARScene } from '@viro-community/react-viro';
 
 import Breadboard from './Component/Breadboard';
 import ArduinoUno from './Component/Uno';
+import Button from './Component/Button';
+import Resistor from './Component/Resistor';
+import Buzzer from './Component/Buzzer';
 import Potentiometer from './Component/Potentiometer';
-import Ultrasonic from './Component/ultrasonic';
-import Cable from './Component/cable';
+import Ultrasonic from './Component/Ultrasonic';
+import Cable from './Component/Cable';
 
 
 const opCode =
@@ -94,6 +97,9 @@ class ARCircuitScene extends React.Component
         {
             case 0: ArduinoUno.init(data); break;
             case 1: Breadboard.init(data); break;
+            case 3: Button.init(data); break;
+            case 4: Resistor.init(data); break;
+            case 5: Buzzer.init(data); break;
             case 6: Potentiometer.init(data); break;
             case 8: Ultrasonic.init(data); break;
             case 9: Cable.init(data); break;

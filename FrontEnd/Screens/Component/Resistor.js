@@ -10,27 +10,27 @@ import { CPUPerformance } from './src/cpu-performance';
 import { AVRRunner } from './src/execute';
 import { formatTime } from './src/format-time';
 
-export default class Potentiometer
+export default class Resistor
 {
     static init(data)
     {
-        data.get = Potentiometer.getRender.bind(data);
-        data.onCompile = Potentiometer._compile.bind(data);
+        data.get = Resistor.getRender.bind(data);
+        data.onCompile = Resistor._compile.bind(data);
 
         data.node_props.position = [0, -.5, -.5];
-        data.node_props.scale = [0.4, 0.4, 0.4];
+        data.node_props.scale = [0.2, 0.2, 0.2];
         data.node_props.dragType = 'FixedDistance'
         data.node_props.onDrag = () => {};
         data.node_props.onClick = () => {console.log('hi!!')};
 
         data.props.position = [0, 0, 0];
-        data.props.rotation = [0, -180, 0];
+        data.props.rotation = [0, 0, 0];
         data.props.scale = [.1, .1, .1];
     }
 
     static getRender(index)
     {
-        const source = require('./res/potentiometer.glb');
+        const source = require('./res/resistor.glb');
         const resources = [require('./res/potentiometerResource1.jpeg'),];
         return (
             <ViroNode key={index} {...this.node_props}>
@@ -38,7 +38,7 @@ export default class Potentiometer
                     innerAngle={5}
                     outerAngle={45}
                     direction={[0, -1, -.2]}
-                    position={[0, 7, 0]}
+                    position={[0, 13, 0]}
                     color="#ffffff"
                     castsShadow={true}
                     influenceBitMask={2}
@@ -74,7 +74,7 @@ export default class Potentiometer
                 console.log(`${result.stderr || result.stdout}`);
                 if (result.hex) {
                     console.log('on loading...');
-                    Potentiometer._execute(this, result.hex);
+                    Resistor._execute(this, result.hex);
                 }
             } catch (err) {
                 console.log('Failed: ' + err);
@@ -84,4 +84,4 @@ export default class Potentiometer
 	}
 }
 
-module.exports = Potentiometer;
+module.exports = Resistor;
