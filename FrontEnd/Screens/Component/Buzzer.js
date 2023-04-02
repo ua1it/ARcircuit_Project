@@ -30,8 +30,8 @@ export default class Buzzer
 
     static getRender(index)
     {
-        const source = require('./res/arduino_module_buzzer.glb');
-        const resources = [require('./res/potentiometerResource1.jpeg'),];
+        const source = require('./res/buzzer.glb');
+        const resources = [require('./res/buzzerResource1.jpeg'),];
         return (
             <ViroNode key={index} {...this.node_props}>
                 <ViroSpotLight
