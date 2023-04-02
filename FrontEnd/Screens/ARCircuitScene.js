@@ -6,6 +6,7 @@ import { ViroAmbientLight, ViroARScene } from '@viro-community/react-viro';
 
 import Breadboard from './Component/Breadboard';
 import ArduinoUno from './Component/Uno';
+import Potentiometer from './Component/Potentiometer';
 
 
 const opCode =
@@ -22,7 +23,7 @@ const BasicCircuit =
     'Breadboard',
     'LED',
     'Button',
-    'Register',
+    'Resistor',
     'Buzzer',
     'Potentiometer',
     'Photoresistor',
@@ -91,6 +92,7 @@ class ARCircuitScene extends React.Component
         {
             case 0: ArduinoUno.init(data); break;
             case 1: Breadboard.init(data); break;
+            case 6: Potentiometer.init(data); break;
             default: return -1;
         }
 
