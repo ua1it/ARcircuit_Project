@@ -18,7 +18,7 @@ export default class Button
         data.onCompile = Button._compile.bind(data);
 
         data.node_props.position = [0, -.5, -.5];
-        data.node_props.scale = [0.2, 0.2, 0.2];
+        data.node_props.scale = [0.05, 0.05, 0.05];
         data.node_props.dragType = 'FixedDistance'
         data.node_props.onDrag = () => {};
         data.node_props.onClick = () => {console.log('hi!!')};
@@ -31,7 +31,6 @@ export default class Button
     static getRender(index)
     {
         const source = require('./res/button.glb');
-        const resources = [require('./res/potentiometerResource1.jpeg'),];
         return (
             <ViroNode key={index} {...this.node_props}>
                 <ViroSpotLight
@@ -50,7 +49,6 @@ export default class Button
                 <Viro3DObject
                     {...this.props}
                     source={source}
-                    resources={resources}
                     type='GLB'
                     lightReceivingBitMask={3}
                     shadowCastingBitMask={2}
