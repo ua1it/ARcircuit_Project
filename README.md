@@ -1,16 +1,5 @@
 > 개발환경 구축
 ### 초기 설정
-1. Node js LTS버전으로 설치
-2. vsCode 설치
-3. Git 설치
-4. git clone https://github.com/jomo34/Safety_management_Project.git
-5. 삼성 통합 드라이버 설치 후 ADB Tool 다운로드(https://kibua20.tistory.com/165)
-6. 자바 버전 확인 및 환경변수 설정(16.0.2 사용)
-7. Gradle 설치 및 GRADLE_HOME 환경변수 설정(https://thecodinglog.github.io/gradle/2019/09/11/install-gradle-in-windows.html)
-
-
-## 실행방법
-### 기본 설정
 - Android Device Setting
   1. Android 기기에서 설정을 열고 휴대전화 정보를 검색합니다.
   2. 휴대전화 정보를 탭하고 빌드 번호를 일곱 번 탭합니다. 메시지가 표시되면 기기 비밀번호 또는 PIN을 입력합니다.
@@ -50,6 +39,10 @@
   6. 사용자 변수 리스트에서 Path를 선택하여 환경 변수 편집 화면으로 이동합니다.
   7. 아까 만든 환경변수를 편집하여 SDK가 설치된 폴더 하위에 있는 platform-tools폴더 경로를 입력하고 확인 버튼을 눌러 환경 변수를 수정합니다.
 
+- ```git clone https://github.com/jomo34/Safety_management_Project.git```
+
+
+## 실행방법
 ### Terminal 1st, BackEnd 실행
 ```BackEnd> python server.py```
 ### Terminal 2nd, FrontEnd 실행
