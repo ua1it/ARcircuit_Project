@@ -5,17 +5,16 @@ import React from 'react';
 import { Viro3DObject, ViroSpotLight, ViroQuad, ViroNode } from '@viro-community/react-viro';
 
 import { PinState } from 'avr8js';
-import { buildHex } from './src/compile';
-import { CPUPerformance } from './src/cpu-performance';
-import { AVRRunner } from './src/execute';
-import { formatTime } from './src/format-time';
+import { buildHex } from './runner/compile';
+import { CPUPerformance } from './runner/cpu-performance';
+import { AVRRunner } from './runner/execute';
+import { formatTime } from './runner/format-time';
 
 export default class Cable
 {
     static init(data)
     {
         data.get = Cable.getRender.bind(data);
-        data.onCompile =  Cable._compile.bind(data);
 
         data.node_props.position = [0, -.5, -.5];
         data.node_props.dragType = 'FixedDistance'
@@ -80,50 +79,6 @@ export default class Cable
             </ViroNode>
         );
     }
-	
-	static _compile(code)
-	{
-        const run = async() => {
-            try {
-                console.log('in compiling...');
-                const result = await buildHex(code);
-                console.log(`${result.stderr || result.stdout}`);
-                if (result.hex) {
-                    console.log('on loading...');
-                    Cable._execute(this, result.hex);
-                }
-            } catch (err) {
-                console.log('Failed: ' + err);
-            }
-        }
-        run();
-	}
-	
-	static _execute(data, hex)
-	{
-		var runner = new AVRRunner(hex);
-		const MHZ = 16e+6;
-		
-		// Hook to PORTB register
-		runner.portB.addListener(() => {
-			console.log("port B: ", 
-			runner.portB.pinState(4),
-			runner.portB.pinState(5)
-			);
-		});
-		runner.usart.onByteTransmit = (value) => {
-			console.log("serial: ",
-			String.fromCharCode(value)
-			);
-		};
-		
-		const cpuPerf = new CPUPerformance(runner.cpu, MHZ);
-		runner.execute((cpu) => {
-			const time = formatTime(cpu.cycles / MHZ);
-			const speed = (cpuPerf.update() * 100).toFixed(0);
-			console.log(`Simulation time: ${time} (${speed}%)`);
-		});
-	}
 }
 
 module.exports = Cable;

@@ -182,9 +182,7 @@ const App = () => {
     <NavigationContainer>
       <StatusBar translucent backgroundColor={"transparent"}/>
       {/* 네비게이션 기본틀의 스택을 생성 */}
-      <Stack.Navigator
-        detachInactiveScreens={false}
-      >
+      <Stack.Navigator detachInactiveScreens={false}>
         {/* 해당스택에 들어갈 화면 요소를 넣어준다. */}
         <Stack.Screen name="Home" component={HomeScreen} options={{headerShown: false}}/>
         {/* <Stack.Screen name="Details" component={DetailsScreen}/> */}

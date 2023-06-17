@@ -13,7 +13,6 @@ import {
   usart0Config,
 } from 'avr8js';
 import { loadHex } from './intelhex';
-import { MicroTaskScheduler } from './task-scheduler';
 
 // ATmega328p params
 const FLASH = 0x8000;
@@ -29,8 +28,8 @@ export class AVRRunner {
   readonly portD: AVRIOPort;
   readonly usart: AVRUSART;
   readonly speed = 16e6; // 16 MHZ
-  readonly workUnitCycles = 500000;
-  readonly taskScheduler = new MicroTaskScheduler();
+  
+  private stopped = false;
 
   constructor(hex: string) {
     loadHex(hex, new Uint8Array(this.program.buffer));
@@ -42,22 +41,25 @@ export class AVRRunner {
     this.portC = new AVRIOPort(this.cpu, portCConfig);
     this.portD = new AVRIOPort(this.cpu, portDConfig);
     this.usart = new AVRUSART(this.cpu, usart0Config, this.speed);
-    this.taskScheduler.start();
   }
 
-  // CPU main loop
-  execute(callback: (cpu: CPU) => void) {
-    const cyclesToRun = this.cpu.cycles + this.workUnitCycles;
-    while (this.cpu.cycles < cyclesToRun) {
-      avrInstruction(this.cpu);
-      this.cpu.tick();
+  async execute(callback: (cpu: CPU) => void) {
+    this.stopped = false;
+    const { cpu } = this;
+    for (;;) {
+      avrInstruction(cpu);
+      cpu.tick();
+      if (cpu.cycles % 50000 === 0) {
+        callback(cpu);
+        await new Promise(resolve => setTimeout(resolve, 0));
+        if (this.stopped) {
+          break;
+        }
+      }
     }
-
-    callback(this.cpu);
-    this.taskScheduler.postTask(() => this.execute(callback));
   }
 
   stop() {
-    this.taskScheduler.stop();
+    this.stopped = true;
   }
 }

@@ -4,22 +4,24 @@ import React from 'react';
 
 import { ViroAmbientLight, ViroARScene } from '@viro-community/react-viro';
 
-import Breadboard from './Component/Breadboard';
-import ArduinoUno from './Component/Uno';
+import { ArduinoUno } from './Component/Uno';
+import { Breadboard } from './Component/Breadboard';
+import { LED } from './Component/LED';
 import Button from './Component/Button';
 import Resistor from './Component/Resistor';
 import Buzzer from './Component/Buzzer';
 import Potentiometer from './Component/Potentiometer';
-import Ultrasonic from './Component/Ultrasonic';
-import Cable from './Component/Cable';
+import Ultrasonic from './Component/ultrasonic';
+import Cable from './Component/cable';
+import MathUtil from './Util/MathUtil';
+import { ViroUtil } from './Util/ViroUtil';
 
 
 const opCode =
 {
     IDLE: -1,
     CREATE: 0,
-    REMOVE: 1,
-    COMPILE: 2,
+    REMOVE: 1
 };
 
 const BasicCircuit =
@@ -51,126 +53,282 @@ const AdvancedCircuit =
     'KY-0009 SMD RGB LED'
 ];
 
-const ComponentProps =
+const DataProperty =
 {
     index: -1,
-    get: undefined,
-    node_props: {},
-    props: {},
-    select: false,
-    movable: false,
-    editable: false,
+	classid: -1,
+    props: null,
+	getState: null,
+    extra: null,
+};
 
-    onCompile: undefined,
-
-    extra: undefined
+const modeConstant = {
+	IDLE: 0,
+    ADD: 1,
+    REMOVE: 2,
+	SELECT: 3
 };
 
 class ARCircuitScene extends React.Component
 {
-    constructor()
+    constructor(props)
     {
-        super();
+        super(props);
+		
+		this.state = {
+			mode: modeConstant.IDLE,
+			caller: null,
 
-        this.components = [];
+            component: [],
+            
+            cameraTransform: {}
+		};
 
-        this._createComponent = this._createComponent.bind(this);
-        this._removeComponent = this._removeComponent.bind(this);
-        this._onClick = this._onClick.bind(this);
-        this._getComponentModel = this._getComponentModel.bind(this);
+        this.component = [];
+
+        this.total_idx = 0;
+
+        this.createComp = this._createComp.bind(this);
+        this.removeComp = this._removeComp.bind(this);
+        this.onCommand = this._onCommand.bind(this);
+        this.callParent = this.props.callback;
     }
 
-    _createComponent(classname)
+    _createComp(position, classname)
     {
-        var data = {};
-        Object.assign(data, ComponentProps);
-
         var index = BasicCircuit.indexOf(classname);
         if (index == -1)
             return -1;
-        
-        console.log('create class id:', index);
+		
+        var data = {};
+        Object.assign(data, DataProperty);
+		
+		data.index = this.total_idx;
         data.classid = index;
+		data.props = {
+			name: `Circuit_${data.classid}_${data.index}`,
+            initialPos: position,
+			sendScene: this.onCommand,
+			getState: () => { return this.state; }
+		};
+		Object.freeze(data.props);
 
-        // bind function with 'data' to make them process their data in init function.
-        switch (data.classid)
+        this.callParent("toast", {
+            type: "success",
+            text1: "Added component",
+            text2: `Successfully added ${classname}, id: ${data.props.name}`,
+            position: 'bottom',
+            visibilityTime: 2000
+        });
+
+        this.component.push(data);
+        this.total_idx += 1;
+        return data.index;
+    }
+
+    _removeComp(name)
+    {
+        var idx = ViroUtil.getInfo(name)[1];
+        for (var i = 0; i < this.component.length; i++)
         {
-            case 0: ArduinoUno.init(data); break;
-            case 1: Breadboard.init(data); break;
-            case 3: Button.init(data); break;
+            if (this.component[i].index == idx)
+            {
+                this.callParent("toast", {
+                    type: "success",
+                    text1: "Remove successful",
+                    text2: `Remove component ${name}`,
+                    position: 'bottom',
+                    visibilityTime: 2000
+                });
+
+                this.component.splice(i, 1);
+                break;
+            }
+        }
+    }
+
+    static _getComp(data)
+    {
+		switch (data.classid)
+		{
+            case 0: return (<ArduinoUno key={data.index} {...data.props} />);
+			case 1: return (<Breadboard key={data.index} {...data.props} />);
+            case 2: return (<LED key={data.index} {...data.props} />);
+            /*case 3: Button.init(data); break;
             case 4: Resistor.init(data); break;
             case 5: Buzzer.init(data); break;
             case 6: Potentiometer.init(data); break;
             case 8: Ultrasonic.init(data); break;
-            case 9: Cable.init(data); break;
-            default: return -1;
-        }
-
-        this.components.push(data);
-        return this.components.length - 1;
+            case 9: Cable.init(data); break;*/
+		}
+		
+		return (null);
     }
+	
+	_onCommand(command, data)
+	{
+		console.log(`test: ${command}, [${data}]`);
+		switch (command)
+		{
+            // Reset
+            case "reset":
+                this.setState({
+                    mode: modeConstant.IDLE,
+                    caller: null
+                })
+                break;
 
-    _removeComponent(index)
-    {
-        if (index >= this.components.length || index < 0)
-            return;
-        
-        this.components.splice(index, 1);
-    }
-
-    _onCompile(code)
-    {
-        console.log('do compile: ' + code);
-        for (var i = 0; i < this.components.length; i++)
-        {
-            if (this.components[i].onCompile == undefined)
-                continue;
-
-            this.components[i].onCompile(code);
-        }
-    }
-
-    _onClick(position, source)
-    {
-        console.log('onClick:', position, source);
-    }
-
-    _getComponentModel(data, index)
-    {
-        console.log('gc', index);
-        return data.get(index);
-    }
+            // Request selection
+            case "selection":
+                this.setState({
+                    mode: modeConstant.SELECT,
+                    caller: data
+                })
+                break;
+            
+            case "remove":
+                this.removeComp(data.name);
+                this.setState({
+                    mode: modeConstant.IDLE,
+                    caller: null
+                });
+                break;
+            
+            // Edit code (Uno)
+            case "editor":
+                this.callParent("editor", data);
+                break;
+            
+            // Toast
+            case "toast":
+                this.callParent("toast", data);
+                break;
+		}
+	}
 
     render()
     {
-        if (this.props.arSceneNavigator.viroAppProps != undefined)
+		let viroAppProps = this.props.arSceneNavigator.viroAppProps;
+		
+        if (viroAppProps != undefined)
         {
-            let operation = this.props.arSceneNavigator.viroAppProps.opcode;
-            let source = this.props.arSceneNavigator.viroAppProps.source;
+            let operation = viroAppProps.opcode;
+            let source = viroAppProps.source;
 
             switch (operation)
             {
                 case opCode.CREATE:
-                    this._createComponent(source);
+                    setTimeout(() => {
+                        this.callParent("toast", {
+                            type: "info",
+                            text1: "Add component",
+                            text2: `Touch target point to create component ${source}`,
+                            position: 'bottom',
+                            visibilityTime: 2000
+                        });
+                        
+                        this.setState({
+                            mode: modeConstant.ADD,
+                            caller: source
+                        })
+                    }, 10);
                     break;
                 case opCode.REMOVE:
-                    this._removeComponent(source);
+                    setTimeout(() => {
+                        this.callParent("toast", {
+                            type: "info",
+                            text1: "Remove component",
+                            text2: `Touch target component to remove, touch blank to cancel.`,
+                            position: 'bottom',
+                            visibilityTime: 2000
+                        });
+
+                        this.setState({
+                            mode: modeConstant.REMOVE,
+                            caller: null
+                        })
+                    }, 10);
                     break;
-                case opCode.COMPILE:
-                    this._onCompile(source);
+                case opCode.REMOVE_CANCEL:
+                    setTimeout(() => {
+                        this.callParent("toast", {
+                            type: "info",
+                            text1: "Remove canceled",
+                            position: 'bottom',
+                            visibilityTime: 2000
+                        });
+
+                        this.setState({
+                            mode: modeConstant.IDLE,
+                            caller: null
+                        })
+                    }, 10);
                     break;
             }
         }
 
-        let getComponentList = this.components.map((data, index) => this._getComponentModel(data, index));
+        let compList = this.component.map(ARCircuitScene._getComp);
+
+        const camera_handler = (newCameraTransform) => {
+            let update = false;
+            let oldCamera = this.state.cameraTransform;
+            let newCamera = newCameraTransform.cameraTransform;
+
+            for (var key of Object.keys(newCamera))
+            {
+                if (!(key in oldCamera)) // initialize
+                {
+                    update = true;
+                    break;
+                }
+
+                var dist = MathUtil.vecLength(
+                    MathUtil.vecSubtract(oldCamera[key], newCamera[key]));
+
+                if (dist >= 0.1)
+                {
+                    update = true;
+                    break;
+                }
+            }
+
+            if (update)
+                this.setState({cameraTransform: newCamera});
+        };
+
+        const click_handler = (position, src) => {
+            switch (this.state.mode)
+            {
+                case modeConstant.ADD:
+                    console.log(`create: ${position}`);
+                    this.createComp(position, this.state.caller);
+                    this.setState({
+                        mode: modeConstant.IDLE,
+                        caller: null
+                    });
+                    break;
+                case modeConstant.REMOVE:
+                    this.callParent("toast", {
+                        type: "info",
+                        text1: "Remove canceled",
+                        position: 'bottom',
+                        visibilityTime: 2000
+                    });
+                    this.setState({
+                        mode: modeConstant.IDLE,
+                        caller: null
+                    });
+                    break;
+            }
+        }
 
         return (
-            <ViroARScene ref={(scene)=>{this.scene = scene}} onClick={this._onClick}>
+            <ViroARScene ref={(scene) => {this.scene = scene;}} onClick={click_handler} onCameraTransformUpdate={camera_handler}>
                 <ViroAmbientLight color={"#aaaaaa"} influenceBitMask={1} />
-                {getComponentList}
+                {compList}
             </ViroARScene>
         );
     }
 };
 
-module.exports = { ARCircuitScene, opCode, BasicCircuit, AdvancedCircuit };
+module.exports = { ARCircuitScene, opCode, BasicCircuit, AdvancedCircuit, modeConstant };

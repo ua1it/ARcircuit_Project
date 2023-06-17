@@ -5,17 +5,16 @@ import React from 'react';
 import { Viro3DObject, ViroSpotLight, ViroQuad, ViroNode } from '@viro-community/react-viro';
 
 import { PinState } from 'avr8js';
-import { buildHex } from './src/compile';
-import { CPUPerformance } from './src/cpu-performance';
-import { AVRRunner } from './src/execute';
-import { formatTime } from './src/format-time';
+import { buildHex } from './runner/compile';
+import { CPUPerformance } from './runner/cpu-performance';
+import { AVRRunner } from './runner/execute';
+import { formatTime } from './runner/format-time';
 
 export default class Potentiometer
 {
     static init(data)
     {
         data.get = Potentiometer.getRender.bind(data);
-        data.onCompile = Potentiometer._compile.bind(data);
 
         data.node_props.position = [0, -.5, -.5];
         data.node_props.scale = [0.4, 0.4, 0.4];
@@ -64,24 +63,6 @@ export default class Potentiometer
             </ViroNode>
         );
     }
-	
-	static _compile(code)
-	{
-        const run = async() => {
-            try {
-                console.log('in compiling...');
-                const result = await buildHex(code);
-                console.log(`${result.stderr || result.stdout}`);
-                if (result.hex) {
-                    console.log('on loading...');
-                    Potentiometer._execute(this, result.hex);
-                }
-            } catch (err) {
-                console.log('Failed: ' + err);
-            }
-        }
-        run();
-	}
 }
 
 module.exports = Potentiometer;

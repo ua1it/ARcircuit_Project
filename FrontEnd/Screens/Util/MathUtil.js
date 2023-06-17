@@ -1,10 +1,17 @@
 'use strict';
 
-export default class MathUtils
+export default class MathUtil
 {
     static vecCopy(a)
     {
         return [a[0], a[1], a[2]];
+    }
+	
+    static vecCopyTo(a, b)
+    {
+        a[0] = b[0];
+		a[1] = b[1];
+		a[2] = b[2];
     }
 
     static vecAdd(a, b)
@@ -25,6 +32,16 @@ export default class MathUtils
         return [a[0] * s[0], a[1]  * s[1], a[2] * s[2]];
     }
 
+    static vecLength(a)
+    {
+        return Math.abs(Math.sqrt(a[0] * a[0] +  a[1] * a[1] + a[2] * a[2]));
+    }
+
+    static vecNormalize(a)
+    {
+        return MathUtil.vecScale(a, 1.0 / this.vecLength(a));
+    }
+
     static vecInnerProduct(a, b)
     {
         return (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]);
@@ -35,7 +52,7 @@ export default class MathUtils
         return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
     }
 
-    static matrix2Vec(a)
+    static matrix2vec(a)
     {
         let result = [];
         for (var i = 0; i < a.length; i++)
@@ -67,7 +84,7 @@ export default class MathUtils
             result.push(ary);
         }
 
-        return MathUtils.matrix2Vec(result);
+        return MathUtil.matrix2vec(result);
     }
 
     static rotateX(p, angle)
@@ -81,7 +98,7 @@ export default class MathUtils
             [0, Math.sin(theta), Math.cos(theta), 0],
             [0, 0, 0, 1]
         ];
-        return MathUtils.matrixMultiply(r_mat, p_mat);
+        return MathUtil.matrixMultiply(r_mat, p_mat);
     }
 
     static rotateY(p, angle)
@@ -95,7 +112,7 @@ export default class MathUtils
             [-Math.sin(theta), 0, Math.cos(theta), 0],
             [0, 0, 0, 1]
         ];
-        return MathUtils.matrixMultiply(r_mat, p_mat);
+        return MathUtil.matrixMultiply(r_mat, p_mat);
     }
 
     static rotateZ(p, angle)
@@ -109,8 +126,8 @@ export default class MathUtils
             [0, 0, 1, 0],
             [0, 0, 0, 1]
         ];
-        return MathUtils.matrixMultiply(r_mat, p_mat);
+        return MathUtil.matrixMultiply(r_mat, p_mat);
     }
 }
 
-module.exports = MathUtils;
+module.exports = MathUtil;
