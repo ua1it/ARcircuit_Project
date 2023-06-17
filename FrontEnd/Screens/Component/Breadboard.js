@@ -3,10 +3,9 @@
 import React from 'react';
 
 import { Viro3DObject, ViroSpotLight, ViroQuad, ViroNode } from '@viro-community/react-viro';
-import MathUtils from '../Util/MathUtils'
+import MathUtil from '../Util/MathUtil'
 
-
-export const sizeConstants = {
+const sizeConstant = {
     // length constants - based on gltf (scale = 1.0)
     horizontal: 1625,
     vertical: 550,
@@ -31,90 +30,147 @@ export const sizeConstants = {
     scale: 0.0005
 };
 
-export default class Breadboard
+export class Breadboard extends React.Component
 {
-    static init(data)
+	constructor(props)
+	{
+		super(props);
+		
+		this.onDrag = this.onDrag.bind(this);
+		this.onClick = this.onClick.bind(this);
+		
+		this.state = {
+			position: [0, 0, 0],
+			rotation: [0, 0, 0],
+			selected: false,
+			chosen: false,
+			connected: []
+		}
+	}
+	
+    render()
     {
-        data.get = Breadboard.getRender.bind(data);
-
-        data.node_props.position = [0, -.5, -.5];
-        data.node_props.dragType = 'FixedDistance'
-        data.node_props.onDrag = Breadboard.onDrag.bind(data);
-        data.node_props.onClick = Breadboard.onClick.bind(data);
-
-        data.props.position = [0, 0, 0];
-        data.props.rotation = [0, 0, 0];
-        data.props.scale = [sizeConstants.scale, sizeConstants.scale, sizeConstants.scale];
-    }
-
-    static getRender(index)
-    {
+		const options = [
+			{
+				sphere_props: {
+					materials: ["white_sphere"],
+					position: [0, .15, 0],
+					onClick: this._menu1.bind(this),
+					animation: {
+						name: "tapAnimation",
+						run: this.state.chosen,
+						onFinish: this._animend.bind(this)
+					}
+				},
+				text_props: {
+					text: "Connect",
+					scale: [.25, .25, .25],
+					position: [0, .25, 0],
+					style: text_style
+				}
+			}
+		];
+		
+		let optionComp = null;
+		
+		if (this.state.selected)
+			optionComp = ViroUtil.buildOption(this.props.name, options);
+		
         const source = require('./res/arduino_breadboard_-_low_poly.glb');
         const resources = [require('./res/breadboard_color.png'), require('./res/breadboard_normal.png')];
+		const objectSize = [sizeConstant.scale, sizeConstant.scale, sizeConstant.scale];
 
         return (
-            <ViroNode key={index} {...this.node_props}>
-                <ViroSpotLight
-                    innerAngle={5}
-                    outerAngle={45}
-                    direction={[0, -1, -.2]}
-                    position={[0, 7, 0]}
-                    color="#ffffff"
-                    castsShadow={true}
-                    influenceBitMask={2}
-                    shadowMapSize={2048}
-                    shadowNearZ={2}
-                    shadowFarZ={5}
-                    shadowOpacity={.7}
-                    />
-                <Viro3DObject
-                    {...this.props}
-                    source={source}
-                    resources={resources}
-                    type='GLB'
-                    lightReceivingBitMask={3}
-                    shadowCastingBitMask={2}
-                    />
-                <ViroQuad
-                    rotation={[-90, 0, 0]}
-                    width={.5} height={.5}
-                    arShadowReceiver={true}
-                    lightReceivingBitMask={2}
-                    />
-            </ViroNode>
+			<ViroNode
+				position={[0, -.5, -0.5]}
+				dragType="FixedDistance"
+				onDrag={this.onDrag}
+				onClick={this.onClick}>
+				
+				{optionComp}
+				
+				<ViroSpotLight
+					innerAngle={5}
+					outerAngle={45}
+					direction={[0, -1, -.2]}
+					position={[0, 7, 0]}
+					color="#ffffff"
+					castsShadow={true}
+					influenceBitMask={2}
+					shadowMapSize={2048}
+					shadowNearZ={2}
+					shadowFarZ={5}
+					shadowOpacity={.7}
+					/>
+					
+				<Viro3DObject
+					position={[0, 0, 0]}
+					rotation={[0, 0, 0]}
+					scale={objectSize}
+					source={source}
+					resources={resources}
+					type='GLB'
+					lightReceivingBitMask={3}
+					shadowCastingBitMask={2}
+					/>
+					
+				<ViroQuad
+					rotation={[-90, 0, 0]}
+					width={.5} height={.5}
+					arShadowReceiver={true}
+					lightReceivingBitMask={2}
+					/>
+					
+			</ViroNode>
         );
     }
+	
+	_menu1()
+	{
+		this.setState({
+			selected: true,
+			chosen: false
+		});
+	}
+	
+	_animend()
+	{
+		this.setState({
+			selected: false,
+			chosen: false
+		});
+	}
 
-    static onClick(position, source)
+    onClick(position, source)
     {
-        var port = Breadboard.computePort(MathUtils.vecAdd(this.node_props.position, this.props.position), this.props.rotation, position);
+        var port = Breadboard.pos2port(this.state.position, this.state.rotation, position);
         console.log('Port:', port);
     }
 
-    static onDrag(position, source)
+    onDrag(dest, source)
     {
-        this.node_props.position = MathUtils.vecCopy(position);
+		this.setState({position: MathUtil.vecCopy(dest)});
     }
 
-    static computePort(position, rotation, vecEnd)
+    static pos2port(position, rotation, vecEnd)
     {
         // make it clear that the linetrace ended with the first plane.
 
         // plane = horizontal vector + a coordinate in plane
-        var plane_h = MathUtils.rotateX([0, 1, 0], rotation[0]);
-        plane_h = MathUtils.rotateY(plane_h, rotation[1]);
-        plane_h = MathUtils.rotateZ(plane_h, rotation[2]);
+        var plane_h = MathUtil.rotateX([0, 1, 0], rotation[0]);
+        plane_h = MathUtil.rotateY(plane_h, rotation[1]);
+        plane_h = MathUtil.rotateZ(plane_h, rotation[2]);
 
-        var dist = sizeConstants.scale * sizeConstants.height / 2;
+        var dist = sizeConstant.scale * sizeConstant.height / 2;
 
         // center of upper plane
-        let src_center = MathUtils.vecCopy(position);
+        let src_center = MathUtil.vecCopy(position);
         src_center[1] += dist;
 
         // compute rotation
-        var plane_c = MathUtils.rotateX(src_center, rotation[0]);
-        plane_c = MathUtils.rotateY(plane_c, rotation[1]);
-        plane_c = MathUtils.rotateZ(plane_c, rotation[2]);
+        var plane_c = MathUtil.rotateX(src_center, rotation[0]);
+        plane_c = MathUtil.rotateY(plane_c, rotation[1]);
+        plane_c = MathUtil.rotateZ(plane_c, rotation[2]);
 
         // compute distance
         // product(vecEnd + k * plane_horizontal - plane_coordinate, plane_horizontal) = 0
@@ -124,18 +180,18 @@ export default class Breadboard
         // target = vecEnd + k * h = vecEnd + (product(h, p) - product(vecEnd, h)) / (product(h, h)) * h
 
         // k
-        var multiplier = (MathUtils.vecInnerProduct(plane_h, plane_c) - MathUtils.vecInnerProduct(vecEnd, plane_h)) / MathUtils.vecInnerProduct(plane_h, plane_h);
+        var multiplier = (MathUtil.vecInnerProduct(plane_h, plane_c) - MathUtil.vecInnerProduct(vecEnd, plane_h)) / MathUtil.vecInnerProduct(plane_h, plane_h);
 
         // k * h
-        var scaled_h = MathUtils.vecScale(plane_h, multiplier);
+        var scaled_h = MathUtil.vecScale(plane_h, multiplier);
 
         // target
-        let target = MathUtils.vecAdd(vecEnd, scaled_h);
+        let target = MathUtil.vecAdd(vecEnd, scaled_h);
 
         // compute reverse rotation (make its rotation = [0, 0, 0])
-        target = MathUtils.rotateX(target, -rotation[0]);
-        target = MathUtils.rotateY(target, -rotation[1]);
-        target = MathUtils.rotateZ(target, -rotation[2]);
+        target = MathUtil.rotateX(target, -rotation[0]);
+        target = MathUtil.rotateY(target, -rotation[1]);
+        target = MathUtil.rotateZ(target, -rotation[2]);
 
         // get horizontal and vertical distance between points
         let vecDist = [
@@ -150,23 +206,23 @@ export default class Breadboard
         // compute port coordinates here...
 
         // align position top-left from center
-        let horizontal = vecDist[0] + sizeConstants.horizontal / 2 * sizeConstants.scale;
-        let vertical = vecDist[2] + sizeConstants.vertical / 2 * sizeConstants.scale;
+        let horizontal = vecDist[0] + sizeConstant.horizontal / 2 * sizeConstant.scale;
+        let vertical = vecDist[2] + sizeConstant.vertical / 2 * sizeConstant.scale;
 
         // out of breadboard - no ports chossed!
-        if (horizontal <= 0 || horizontal >= sizeConstants.horizontal * sizeConstants.scale
-            || vertical <= 0 || vertical >= sizeConstants.vertical * sizeConstants.scale
-            || Math.abs(vecDist[1]) >= (sizeConstants.flexiblity + sizeConstants.height / 2) * sizeConstants.scale)
+        if (horizontal <= 0 || horizontal >= sizeConstant.horizontal * sizeConstant.scale
+            || vertical <= 0 || vertical >= sizeConstant.vertical * sizeConstant.scale
+            || Math.abs(vecDist[1]) >= (sizeConstant.flexiblity + sizeConstant.height / 2) * sizeConstant.scale)
         {
             
         }
         else
         {
             var heights = [
-                (sizeConstants.coord_neg[1] - sizeConstants.flexiblity / 2) * sizeConstants.scale,
-                (sizeConstants.coord_j[1] - sizeConstants.flexiblity / 2) * sizeConstants.scale,
-                (sizeConstants.vert_e - sizeConstants.flexiblity / 2) * sizeConstants.scale,
-                (sizeConstants.vert_neg_bottom - sizeConstants.flexiblity / 2) * sizeConstants.scale
+                (sizeConstant.coord_neg[1] - sizeConstant.flexiblity / 2) * sizeConstant.scale,
+                (sizeConstant.coord_j[1] - sizeConstant.flexiblity / 2) * sizeConstant.scale,
+                (sizeConstant.vert_e - sizeConstant.flexiblity / 2) * sizeConstant.scale,
+                (sizeConstant.vert_neg_bottom - sizeConstant.flexiblity / 2) * sizeConstant.scale
             ];
     
             for (var i = 3; i >= 0; i--)
@@ -188,25 +244,25 @@ export default class Breadboard
 
             switch (y)
             {
-                case 0, 3: min_x = sizeConstants.coord_neg[0]; break;
-                case 1, 2: min_x = sizeConstants.coord_j[0]; break;
+                case 0, 3: min_x = sizeConstant.coord_neg[0]; break;
+                case 1, 2: min_x = sizeConstant.coord_j[0]; break;
             }
-            min_x -= sizeConstants.flexiblity;
-            min_x *= sizeConstants.scale;
+            min_x -= sizeConstant.flexiblity;
+            min_x *= sizeConstant.scale;
 
             if (horizontal >= min_x)
             {
-                x = parseInt((horizontal - min_x) / sizeConstants.distance / sizeConstants.scale);
+                x = parseInt((horizontal - min_x) / sizeConstant.distance / sizeConstant.scale);
                 switch (y)
                 {
                     case 0, 3:
-                        if (x >= sizeConstants.num_np + 9) // out of board
+                        if (x >= sizeConstant.num_np + 9) // out of board
                             result_port = -1;
                         else if (x % 6 == 0) // every 6th port is blocked
                             result_port = -1;
                         break;
                     case 1, 2:
-                        if (x >= sizeConstants.num_alphabet) // out of board
+                        if (x >= sizeConstant.num_alphabet) // out of board
                             result_port = -1;
                         break;
                 }
@@ -214,7 +270,7 @@ export default class Breadboard
 
             if (result_port != -1)
             {
-                y = parseInt((vertical - heights[result_port]) / sizeConstants.distance / sizeConstants.scale);
+                y = parseInt((vertical - heights[result_port]) / sizeConstant.distance / sizeConstant.scale);
                 switch (result_port)
                 {
                     case 0, 3:
@@ -235,6 +291,9 @@ export default class Breadboard
 
         return result_port;
     }
+	
+	static port2pos(position, rotation, port)
+	{
+		
+	}
 }
-
-module.exports = Breadboard;
