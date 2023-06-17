@@ -46,6 +46,7 @@
 ### Terminal 1st, BackEnd 실행
   1. pip install -r requirements.txt
   2. download best.pt file and copy in this file(download path: https://drive.google.com/file/d/1xGlM91if1RXCIvnAx54E6d8hk56F09li/view?usp=sharing)
+     
 ```BackEnd> python server.py```
 ### Terminal 2nd, FrontEnd 실행
 ```
