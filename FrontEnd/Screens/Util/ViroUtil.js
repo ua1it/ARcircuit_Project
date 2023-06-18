@@ -76,6 +76,9 @@ export class ViroUtil
 
 	static makeToast(type, text1, text2, time)
 	{
+		if (time == null)
+			time = 4000;
+
 		this.sendScene("toast", {
 			type: type,
 			text1: text1,
@@ -86,8 +89,8 @@ export class ViroUtil
 	}
 }
 
-// Basic Materials
-export const basic_viromat = ViroMaterials.createMaterials({
+// Materials
+ViroMaterials.createMaterials({
 	white_sphere: {
 		lightingModel: "PBR",
 		diffuseColor: "rgb(231, 231, 231)",
@@ -110,8 +113,8 @@ export const basic_viromat = ViroMaterials.createMaterials({
 	},
 });
 
-// Basic animations
-export const basic_viroanim = ViroAnimations.registerAnimations({
+// Animations
+ViroAnimations.registerAnimations({
     scaleUp:{
 		properties:{
 			scaleX:1,

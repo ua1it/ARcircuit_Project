@@ -65,7 +65,6 @@ export default class ARMain extends Component {
     this._getEditor = this._getEditor.bind(this);
     this.resetOperation = this.resetOperation.bind(this);
     this.callback = this._ARScene_callback.bind(this);
-    this.editorUpdate = undefined;
 
     this.editor_out = null;
 
@@ -110,9 +109,7 @@ export default class ARMain extends Component {
 
         case "readonly":
           editor = (<ScrollView style={styles.readOnly}>
-            <Text>
-                {this.state.editor_input}
-            </Text>
+            <Text>{this.state.editor_input}</Text>
           </ScrollView>
           );
           message = "Ok";
@@ -131,12 +128,9 @@ export default class ARMain extends Component {
 
     const closeModal = () => {
       this.setState({modalVisible: false});
-      clearInterval(this.editorUpdate);
     };
 
     const pressOk = () => {
-      clearInterval(this.editorUpdate);
-
       let callback = this.state.editor_callback;
       if (callback !== undefined)
         callback(this.editor_out);
@@ -153,7 +147,7 @@ export default class ARMain extends Component {
           editor_input: undefined,
           editor_callback: undefined
         });
-      }, 500);
+      }, 100);
     };
 
     const editor = this._getEditor(styles);
@@ -279,22 +273,19 @@ export default class ARMain extends Component {
           editor_input: code_in,
           editor_callback: data.onFinish
         });
-
-        if (data.type == "readonly" && data.updateValue != undefined) {
-          clearInterval(this.editorUpdate);
-          this.editorUpdate = setInterval(() => {
-            let updates = data.updateValue();
-            let desc = updates[0];
-            let context = updates[1];
-
-            if (desc != this.state.editor_desc || context != this.state.editor_input) {
-              this.setState({
-                editor_desc: desc,
-                editor_input: context
-              });
-            }
-          }, 10);
-        }
+        break;
+      
+      case "update_editor":
+        if (!this.state.modalVisible)
+          return;
+        
+        if (data.editor_type != this.state.editor_type)
+          return;
+        
+        this.setState({
+          ...this.state,
+          ...data
+        });
         break;
 
       case "toast":
@@ -680,7 +671,9 @@ var styles_pr = StyleSheet.create({
   },
   readOnly: {
     width:'100%',
-    height:'80%',
+    height:'100%',
+    padding: 0,
+    margin: 5,
     backgroundColor: '#eeeeee',
     color: 'black'
   },

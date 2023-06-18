@@ -5,6 +5,7 @@ import React from 'react';
 import { Viro3DObject, ViroText, ViroSpotLight, ViroQuad, ViroNode } from '@viro-community/react-viro';
 
 import { modeConstant } from '../ARCircuitScene';
+import { callbackType } from './Uno';
 
 import { ViroUtil, text_styles } from '../Util/ViroUtil'
 import MathUtil from '../Util/MathUtil'
@@ -18,8 +19,13 @@ export class LED extends React.Component
 		super(props);
 		
 		this.sendScene = props.sendScene;
+
 		this.onDrag = this._drag.bind(this);
 		this.onClick = this.onClick.bind(this);
+
+		this.connRequest = this._connRequest.bind(this);
+		this.readPin = this._readPin.bind(this);
+
 		this.onConnected = this._connect.bind(this);
 		this.onDisconnect = this._disconnect.bind(this);
 		this.onExecute = this._execute.bind(this);
@@ -54,17 +60,17 @@ export class LED extends React.Component
 		const options = [
 			{
 				sphere_props: {
-					materials: ["white_sphere"],
+					materials: ['white_sphere'],
 					position: [0, .15, 0],
 					onClick: this._menu1.bind(this),
 					animation: {
-						name: "tapAnimation",
+						name: 'tapAnimation',
 						run: this.state.chosen,
 						onFinish: this._animend.bind(this)
 					}
 				},
 				text_props: {
-					text: this.state.connected ? "Disconnect" : "Connect",
+					text: this.state.connected ? 'Disconnect' : 'Connect',
 					scale: [.25, .25, .25],
 					position: [0, .25, 0],
 					rotation: cameraAngle,
@@ -118,17 +124,16 @@ export class LED extends React.Component
 		}
 		else if (this.state.selected)
 		{
-			var image = require('./icon/checkred_transparent.png');
+			var image = require('./icon/menu_yellow_transparent.png');
 			imageComp = ViroUtil.buildImage(this.props.name, 'check001', image, imagePos, cameraAngle);
 		}
-		
-        const source = require('./res/led_light.glb');
 
         return (
 			<ViroNode
+				visible={this.props.visible}
 				position={this.state.position}
 				dragType="FixedToWorld"
-				transformBehaviors="billboardY"
+				transformBehaviors={["billboardY"]}
 				onDrag={this.onDrag}
 				onClick={this.onClick}>
 				
@@ -152,7 +157,7 @@ export class LED extends React.Component
 					position={[0, 0, 0]}
 					rotation={[0, 0, 0]}
 					scale={[.01, .01, .01]}
-					source={source}
+					source={require('./res/led_light.glb')}
 					type='GLB'
 					lightReceivingBitMask={3}
 					shadowCastingBitMask={2}
@@ -200,22 +205,16 @@ export class LED extends React.Component
 			return;
 		}
 
-		this.sendScene("editor", {
+		this.sendScene('editor', {
 			name: this.props.name,
-			type: "number",
-			desc: "Enter Port",
-			input: "",
+			type: 'number',
+			desc: 'Enter Port',
+			input: '',
 			onFinish: (number) => {
-				this.sendScene("selection", {
-					name: this.props.name,
-					callback: this._readPin.bind(this),
-					port: parseInt(number),
-					onConnect: this.onConnected,
-					onDisconnect: this.onDisconnect,
-					onExecute: this.onExecute,
-					onStop: this.onStop,
-				});
-		}});
+				this.sendScene('selection', this.connRequest(number));
+				this.makeToast('info', 'Add connection', 'Touch a component for connecting. Touch component again to cancel.', 2000);
+			}
+		});
 	}
 	
 	_animend()
@@ -251,6 +250,22 @@ export class LED extends React.Component
 	_stop()
 	{
 		this.setState({running: false})
+	}
+
+	_connRequest(number)
+	{
+		return {
+			name: this.props.name,
+			type: callbackType.OUTPUT,
+
+			callback: this.readPin,
+			port: parseInt(number),
+
+			onConnect: this.onConnected,
+			onDisconnect: this.onDisconnect,
+			onExecute: this.onExecute,
+			onStop: this.onStop,
+		}
 	}
 
     onClick(/*position, source*/)
@@ -289,12 +304,19 @@ export class LED extends React.Component
 			{
 				if (this.state.connected)
 				{
-					this.makeToast('error', 'Unable to disconnect', `component ${this.props.name} is ready connected.`, 4000);
-					this.sendScene("reset", null);
+					this.makeToast('error', 'Unable to disconnect', `component ${this.props.name} is ready connected.`);
+					this.sendScene('reset');
 					return;
 				}
 
 				let caller = state.caller;
+
+				if (this.props.name == caller.name)
+				{
+					this.makeToast('info', 'Adding connection is canceled', '', 2000);
+					this.sendScene('reset');
+					return;
+				}
 
 				let classid = ViroUtil.getInfo(caller.name)[0];
 				let callback = caller.callback;
@@ -302,32 +324,30 @@ export class LED extends React.Component
 				// connected comp with uno
 				if (classid == 0)
 				{
-					this.sendScene("editor", {
+					this.sendScene('editor', {
 						name: this.props.name,
-						type: "number",
-						desc: "Enter Port",
-						input: "",
+						type: 'number',
+						desc: 'Enter Port',
+						input: '',
 						onFinish: (number) => {
-							callback(0, {
-								name: this.props.name,
-								callback: this._readPin.bind(this),
-								port: parseInt(number),
-								onConnect: this.onConnected,
-								onDisconnect: this.onDisconnect,
-								onExecute: this.onExecute,
-								onStop: this.onStop,
-							});
-
-							this.sendScene("reset", null);
-					}});
+							callback(0, this.connRequest(number));
+							this.sendScene('reset');
+						}
+					});
+				}
+				else
+				{
+					this.makeToast('error', 'Unable to connect', 'Output connection can only be constructed with Uno.');
+					this.sendScene('reset');
 				}
 				break;
 			}
 			case modeConstant.REMOVE:
 			{
-				if (this.state.in_running)
+				if (this.state.running)
 				{
 					this.makeToast('error', 'Unable to remove', 'This component is now running', 2000);
+					this.sendScene('reset');
 					return;
 				}
 
@@ -336,7 +356,7 @@ export class LED extends React.Component
 					if (this.cstate.disconnect != undefined)
 						this.cstate.disconnect({name: this.props.name});
 				}
-				this.sendScene("remove", {name: this.props.name});
+				this.sendScene('remove', {name: this.props.name});
 				break;
 			}
 		}
@@ -344,7 +364,6 @@ export class LED extends React.Component
 	
 	_readPin(value)
 	{
-		console.log(`LED: ${value}`);
 		value = Math.max(0, Math.min(value, 255));
 		this.setState({bright: value});
 	}

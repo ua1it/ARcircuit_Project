@@ -2,11 +2,7 @@
 
 import React from 'react';
 
-import { StyleSheet } from 'react-native';
-
 import { Viro3DObject, ViroSpotLight, ViroQuad, ViroNode } from '@viro-community/react-viro';
-
-import { PinState } from 'avr8js';
 
 import { buildHex } from './runner/compile';
 import { CPUPerformance } from './runner/cpu-performance';
@@ -32,6 +28,11 @@ void loop() {
     Serial.print("LED off\\n");
     digitalWrite(8, LOW);
 }`;
+
+export const callbackType = {
+	INPUT: 0,
+	OUTPUT: 1
+};
 
 export class ArduinoUno extends React.Component
 {
@@ -81,9 +82,9 @@ export class ArduinoUno extends React.Component
 			// runner
 			hex: null,
 			runner: null,
+			title: null,
 			runner_text: null,
-			time: null,
-			speed: null
+			uptime: 0
 		}
 	}
 
@@ -97,17 +98,17 @@ export class ArduinoUno extends React.Component
 			// Menu1: Connect
 			{
 				sphere_props: {
-					materials: ["white_sphere"],
+					materials: ['white_sphere'],
 					position: [-.225, .15, 0],
 					onClick: this._menu1.bind(this),
 					animation: {
-						name: "tapAnimation",
+						name: 'tapAnimation',
 						run: this.state.chosen,
 						onFinish: this._animend
 					}
 				},
 				text_props: {
-					text: "Connect",
+					text: 'Connect',
 					scale: [.25, .25, .25],
 					position: [-.225, .25, 0],
 					rotation: cameraAngle,
@@ -118,17 +119,17 @@ export class ArduinoUno extends React.Component
 			// Menu2: Edit codes
 			{
 				sphere_props: {
-					materials: ["blue_sphere"],
+					materials: ['blue_sphere'],
 					position: [-.075, .15, 0],
 					onClick: this._menu2.bind(this),
 					animation: {
-						name: "tapAnimation",
+						name: 'tapAnimation',
 						run: this.state.chosen,
 						onFinish: this._animend
 					}
 				},
 				text_props: {
-					text: "Edit",
+					text: 'Edit',
 					scale: [.25, .25, .25],
 					position: [-.075, .25, 0],
 					rotation: cameraAngle,
@@ -139,17 +140,17 @@ export class ArduinoUno extends React.Component
 			// Menu3: Run
 			{
 				sphere_props: {
-					materials: ["yellow_sphere"],
+					materials: ['yellow_sphere'],
 					position: [.075, .15, 0],
 					onClick: this._menu3.bind(this),
 					animation: {
-						name: "tapAnimation",
+						name: 'tapAnimation',
 						run: this.state.chosen,
 						onFinish: this._animend
 					}
 				},
 				text_props: {
-					text: !this.state.in_running ? "Run" : "Stop",
+					text: !this.state.in_running ? 'Run' : 'Stop',
 					scale: [.25, .25, .25],
 					position: [.075, .25, 0],
 					rotation: cameraAngle,
@@ -160,17 +161,17 @@ export class ArduinoUno extends React.Component
 			// Menu4: Show console
 			{
 				sphere_props: {
-					materials: ["red_sphere"],
+					materials: ['red_sphere'],
 					position: [.225, .15, 0],
 					onClick: this._menu4.bind(this),
 					animation: {
-						name: "tapAnimation",
+						name: 'tapAnimation',
 						run: this.state.chosen,
 						onFinish: this._animend
 					}
 				},
 				text_props: {
-					text: "Output",
+					text: 'Output',
 					scale: [.25, .25, .25],
 					position: [.225, .25, 0],
 					rotation: cameraAngle,
@@ -191,7 +192,7 @@ export class ArduinoUno extends React.Component
 		let imageComp = null;
 		if (this.state.selected)
 		{
-			var image = require('./icon/checkred_transparent.png');
+			var image = require('./icon/menu_yellow_transparent.png');
 			imageComp = ViroUtil.buildImage(this.props.name, 'check001', image, imagePos, cameraAngle);
 		}
 		else if (this.state.in_compile)
@@ -215,24 +216,12 @@ export class ArduinoUno extends React.Component
 			imageComp = ViroUtil.buildImage(this.props.name, 'result001', image[this.state.result], imagePos, cameraAngle);
 		}
 		
-        const source = require('./res/arduino_uno.glb');
-        const resources = [require('./res/1775.png'),
-            require('./res/1785.png'),
-            require('./res/1795.png'),
-            require('./res/1805.png'),
-            require('./res/1815.png'),
-            require('./res/1825.png'),
-            require('./res/1835.png'),
-            require('./res/1844.png'),
-            require('./res/1854.png'),
-            require('./res/1919.png'),
-            require('./res/1929.png')];
-		
         return (
 			<ViroNode
+				visible={this.props.visible}
 				position={this.state.position}
 				dragType="FixedToWorld"
-				transformBehaviors="billboardY"
+				transformBehaviors={["billboardY"]}
 				onDrag={this.onDrag}
 				onClick={this.onClick}>
 				
@@ -256,8 +245,8 @@ export class ArduinoUno extends React.Component
 					position={[0, 0, 0]}
 					rotation={[-90, 0, 0]}
 					scale={[.2, .2, .2]}
-					source={source}
-					resources={resources}
+					source={require('./res/arduino_uno.glb')}
+					resources={[]}
 					type='GLB'
 					lightReceivingBitMask={3}
 					shadowCastingBitMask={2}
@@ -278,9 +267,7 @@ export class ArduinoUno extends React.Component
 	
 	_drag(dragToPos, source)
 	{
-		this.setState({
-			position: dragToPos
-		})
+		this.setState({position: dragToPos});
 		this.cstate.is_dragging = true;
 	}
 	
@@ -316,13 +303,14 @@ export class ArduinoUno extends React.Component
 				var caller = state.caller;
 
 				this._callback(0, caller);
-				this.sendScene("reset", null);
+				this.sendScene('reset');
 				break;
 			case modeConstant.REMOVE:
 			{
 				if (this.state.in_running)
 				{
 					this.makeToast('error', 'Unable to remove', 'This component is now running', 2000);
+					this.sendScene('reset');
 					return;
 				}
 
@@ -331,7 +319,7 @@ export class ArduinoUno extends React.Component
 					if (comp.onDisconnect != undefined)
 						comp.onDisconnect(this.props.name);
 				}
-				this.sendScene("remove", {name: this.props.name});
+				this.sendScene('remove', {name: this.props.name});
 				break;
 			}
 		}
@@ -360,32 +348,40 @@ export class ArduinoUno extends React.Component
 			return;
 		}
 
-		this.sendScene("selection", {
+		this.sendScene('selection', {
 			name: this.props.name,
 			callback: this._callback
 		});
+		this.makeToast('info', 'Add connection', 'Touch a component for connecting. Touch component again to cancel.', 2000);
 	}
 	
 	_callback(result, dest)
 	{
 		if (result)
 		{
-			this.makeToast('error', 'Connection Failed', `error code: ${result}`, 4000);
+			this.makeToast('error', 'Connection Failed', `error code: ${result}`);
 			return;
 		}
 
 		if (dest == null || dest == undefined) // ???
 		{
-			this.makeToast('error', 'Connection Failed', 'Unknown component is selected', 4000);
+			this.makeToast('error', 'Connection Failed', 'Unknown component is selected');
 			return;
 		}
 
 		let name = dest.name;
 		let classid = ViroUtil.getInfo(name)[0];
 
+		if (name === this.props.name)
+		{
+			this.makeToast('info', 'Adding connection is canceled', '', 2000);
+			return;
+		}
+
  		// connect to self or connect to uno ==> cancel connection
-		if (name === this.props.name || classid == 0) {
-			this.makeToast('error', 'Connection Failed', 'Uno cannot be connected with uno', 4000);
+		if (classid == 0)
+		{
+			this.makeToast('error', 'Connection Failed', 'Uno cannot be connected with uno');
 			return;
 		}
 
@@ -393,22 +389,22 @@ export class ArduinoUno extends React.Component
 		{
 			if (name == comp.name)
 			{
-				this.makeToast('error', 'Connection Failed', `Already connected with: ${name}, port: ${comp.port}`, 4000);
+				this.makeToast('error', 'Connection Failed', `Already connected with: ${name}`);
 				return;
 			}
 
 			if (dest.port == comp.port)
 			{
-				this.makeToast('error', 'Connection Failed', `The port: ${comp.port} is already using`, 4000);
+				this.makeToast('error', 'Connection Failed', `Port: ${comp.port} is already in use`);
 				return;
 			}
 		}
 		
-		this.makeToast('success', 'Connection Successful', `${this.props.name} connected with: ${name}, port: ${dest.port}`, 4000);
+		this.makeToast('success', 'Connection Successful', `${this.props.name} connected with: ${name}, port: ${dest.port}`);
 		if (dest.onConnect != undefined)
 			dest.onConnect(this.onDisconnect, dest.port);
 
-		this.cstate.connected = this.cstate.connected.concat([dest])
+		this.cstate.connected = this.cstate.connected.concat([dest]);
 	}
 
 	_disconnect(info)
@@ -428,10 +424,10 @@ export class ArduinoUno extends React.Component
 	
 	_menu2(/*position, source*/)
 	{
-		this.sendScene("editor", {
+		this.sendScene('editor', {
 			name: this.props.name,
-			type: "code",
-			desc: "Code Editor",
+			type: 'code',
+			desc: 'Code Editor',
 			input: this.cstate.code,
 			onFinish: (context) => {
 				this.cstate.code = context;
@@ -459,15 +455,11 @@ export class ArduinoUno extends React.Component
 	
 	_menu4(/*position, source*/)
 	{
-		this.sendScene("editor", {
+		this.sendScene('editor', {
 			name: this.props.name,
-			type: "readonly",
-			desc: `Console [runtime ${this.cstate.time}], [speed ${this.cstate.speed}%]`,
-			input: this.cstate.runner_text,
-			updateValue: () => { return [
-				`Console [runtime ${this.cstate.time}], [speed ${this.cstate.speed}%]`,
-				this.cstate.runner_text
-			] }
+			type: 'readonly',
+			desc: this.cstate.title,
+			input: this.cstate.runner_text
 		});
 		this.setState({
 			selected: true,
@@ -483,27 +475,30 @@ export class ArduinoUno extends React.Component
 		this._stop();
 
 		this.setState({in_compile: true});
-		this.cstate.runner_text = null;
+
+		this.cstate = {
+			...this.cstate,
+			title: 'Console [Stopped]',
+			runner_text: null
+		}
 
 		this.makeToast('info', 'Uno is now compiling...', `id: ${this.props.name}`, 2000);
 		
         try {
 			const result = await buildHex(this.cstate.code);
 
-			if (result.hex)
-			{
-				this.cstate.hex = result.hex;
-				this.makeToast('success', 'Compile succeed', result.stderr || result.stdout, 4000);
-			
-				this.setState({
-					result: 1,
-					in_compile: false
-				});
-			}
-			else
+			if (!result.hex)
 				throw(result.stderr || result.stdout);
+			
+			this.cstate.hex = result.hex;
+			this.makeToast('success', 'Compile success', result.stderr || result.stdout);
+		
+			this.setState({
+				result: 1,
+				in_compile: false
+			});
 		} catch (err) {
-			this.makeToast('error', 'Compile failed', err, 4000);
+			this.makeToast('error', 'Compile failure', err, 4000);
 			this.cstate.hex = null;
 
 			this.setState({
@@ -521,36 +516,57 @@ export class ArduinoUno extends React.Component
 
 		if (this.cstate.hex == null)
 		{
-			this.makeToast('error', 'Hex is empty', 'Please compile the code first.', 4000);
+			this.makeToast('error', 'Hex is empty', 'Please compile the code first.');
 			return;
 		}
 		
 		let runner = new AVRRunner(this.cstate.hex);
 		const MHZ = 16e6;
 		
-		// Hook to PORTB register
-		runner.portB.addListener((value) => {
-			this.updatePortB(value);
-		});
+		// Hook to PORTB register (Digital 8 ~ 13)
+		runner.portB.addListener(this.updatePortB);
+		
+		// Hook to PORTD register (Digital 0 ~ 7)
+		runner.portD.addListener(this.updatePortD);
 
 		runner.usart.onByteTransmit = (value) => {
             this.cstate.runner_text = this.cstate.runner_text + String.fromCharCode(value);
+			this.sendScene('update_editor', {
+				editor_type: 'readonly',
+				editor_input: this.cstate.runner_text
+			});
         };
 		
 		const cpuPerf = new CPUPerformance(runner.cpu, MHZ);
 		runner.execute((cpu) => {
-			this.cstate.time = formatTime(cpu.cycles / MHZ);
-			this.cstate.speed = (cpuPerf.update() * 100).toFixed(0);
+			const runtime = formatTime(cpu.cycles / MHZ);
+			const speed = (cpuPerf.update() * 100).toFixed(0);
+
+			this.cstate.title = `Console [runtime ${runtime}], [speed ${speed}%]`;
+
+			const time = performance.now();
+			if (this.cstate.uptime <= time)
+			{
+				this.sendScene('update_editor', {
+					editor_type: 'readonly',
+					editor_desc: this.cstate.title
+				});
+				this.cstate.uptime = time + 50;
+			}
 		});
 		
-		this.cstate.runner = runner;
-		this.cstate.runner_text = "";
+		this.cstate = {
+			...this.cstate,
+			runner: runner,
+			title: 'Console [runtime 0] [speed 0%]',
+			runner_text: '',
+			uptime: 0
+		}
 
 		this.setState({in_running: true})
 		
 		for (var comp of this.cstate.connected)
 		{
-			console.log(`test: ${Object.keys(comp)}`);
 			var callback = comp.onExecute;
 			if (callback != undefined)
 				callback();
@@ -567,7 +583,6 @@ export class ArduinoUno extends React.Component
 		{
 			runner.stop();
 			this.cstate.runner = null;
-
 			this.makeToast('info', 'Uno is now stopped', `id: ${this.props.name}`, 2000);
 		}
 		
@@ -592,6 +607,8 @@ export class ArduinoUno extends React.Component
 	_updatePortB(value)
 	{
 		this.cstate.connected.map((dest) => {
+			if (dest.type != callbackType.OUTPUT)
+				return;
 			if (dest.port < 8 || dest.port > 13)
 				return;
 			
@@ -606,6 +623,19 @@ export class ArduinoUno extends React.Component
 
 	_updatePortD(value)
 	{
-
+		this.makeToast('info', 'PortD', `${value}`, 2000);
+		this.cstate.connected.map((dest) => {
+			if (dest.type != callbackType.OUTPUT)
+				return;
+			if (dest.port < 0 || dest.port > 7)
+				return;
+			
+			let event_handler = dest.callback;
+			if (event_handler === undefined)
+				return;
+			
+			let out_value = (value & (1 << dest.port)) * 255;
+			event_handler(out_value);
+		});
 	}
 }

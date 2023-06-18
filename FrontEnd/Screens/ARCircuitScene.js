@@ -2,17 +2,17 @@
 
 import React from 'react';
 
-import { ViroAmbientLight, ViroARScene } from '@viro-community/react-viro';
+import { ViroLightingEnvironment, ViroAmbientLight, ViroARScene, ViroTrackingStateConstants } from '@viro-community/react-viro';
 
 import { ArduinoUno } from './Component/Uno';
 import { Breadboard } from './Component/Breadboard';
 import { LED } from './Component/LED';
-import Button from './Component/Button';
-import Resistor from './Component/Resistor';
-import Buzzer from './Component/Buzzer';
-import Potentiometer from './Component/Potentiometer';
-import Ultrasonic from './Component/ultrasonic';
-import Cable from './Component/cable';
+import { Button } from './Component/Button';
+import { Resistor } from './Component/Resistor';
+import { Buzzer } from './Component/Buzzer';
+import { Potentiometer } from './Component/Potentiometer';
+import { Ultrasonic } from './Component/ultrasonic';
+// import { Cable } from './Component/cable';
 import MathUtil from './Util/MathUtil';
 import { ViroUtil } from './Util/ViroUtil';
 
@@ -78,6 +78,7 @@ class ARCircuitScene extends React.Component
 		this.state = {
 			mode: modeConstant.IDLE,
 			caller: null,
+            tracking: ViroTrackingStateConstants.TRACKING_UNAVAILABLE,
 
             component: [],
             
@@ -90,7 +91,12 @@ class ARCircuitScene extends React.Component
 
         this.createComp = this._createComp.bind(this);
         this.removeComp = this._removeComp.bind(this);
+        this.renderComp = this._getComp.bind(this);
+
+        this.makeToast = this._toast.bind(this);
+
         this.onCommand = this._onCommand.bind(this);
+
         this.callParent = this.props.callback;
     }
 
@@ -113,16 +119,10 @@ class ARCircuitScene extends React.Component
 		};
 		Object.freeze(data.props);
 
-        this.callParent("toast", {
-            type: "success",
-            text1: "Added component",
-            text2: `Successfully added ${classname}, id: ${data.props.name}`,
-            position: 'bottom',
-            visibilityTime: 2000
-        });
-
         this.component.push(data);
         this.total_idx += 1;
+
+        this.makeToast('success', 'Added component', `Successfully added ${classname}, id: ${data.props.name}`, 2000);
         return data.index;
     }
 
@@ -133,41 +133,56 @@ class ARCircuitScene extends React.Component
         {
             if (this.component[i].index == idx)
             {
-                this.callParent("toast", {
-                    type: "success",
-                    text1: "Remove successful",
-                    text2: `Remove component ${name}`,
-                    position: 'bottom',
-                    visibilityTime: 2000
-                });
-
                 this.component.splice(i, 1);
+                this.makeToast('success', 'Removed component', `Successfully removed ${name}`, 2000);
                 break;
             }
         }
     }
 
-    static _getComp(data)
+    _getComp(data)
     {
+        const visible = this.state.tracking == ViroTrackingStateConstants.TRACKING_UNAVAILABLE ? false : true;
+
 		switch (data.classid)
 		{
-            case 0: return (<ArduinoUno key={data.index} {...data.props} />);
-			case 1: return (<Breadboard key={data.index} {...data.props} />);
-            case 2: return (<LED key={data.index} {...data.props} />);
-            /*case 3: Button.init(data); break;
-            case 4: Resistor.init(data); break;
-            case 5: Buzzer.init(data); break;
-            case 6: Potentiometer.init(data); break;
-            case 8: Ultrasonic.init(data); break;
-            case 9: Cable.init(data); break;*/
+            case 0: return (<ArduinoUno key={data.index} {...data.props} visible={visible} />);
+			case 1: return (<Breadboard key={data.index} {...data.props} visible={visible} />);
+            case 2: return (<LED key={data.index} {...data.props} visible={visible} />);
+            case 3: return (<Button key={data.index} {...data.props} visible={visible} />);
+			case 4: return (<Resistor key={data.index} {...data.props} visible={visible} />);
+            case 5: return (<Buzzer key={data.index} {...data.props} visible={visible} />);
+            case 6: return (<Potentiometer key={data.index} {...data.props} visible={visible} />);
+			// case 7: return (<Photoresistor key={data.index} {...data.props} visible={visible} />);
+            case 8: return (<Ultrasonic key={data.index} {...data.props} visible={visible} />);
+            // case 9: return (<Cabel key={data.index} {...data.props} visible={visible} />);
 		}
 		
 		return (null);
     }
+
+    _toast(type, text1, text2, time)
+    {
+        if (time == null)
+            time = 4000;
+        
+        this.callParent("toast", {
+            type: type,
+            text1: text1,
+            text2: text2,
+            position: 'bottom',
+            visibilityTime: time
+        });
+    };
 	
 	_onCommand(command, data)
 	{
-		console.log(`test: ${command}, [${data}]`);
+        if (this.state.tracking == ViroTrackingStateConstants.TRACKING_UNAVAILABLE)
+        {
+            this.makeToast('error', 'Unable to handle events', 'IEEC is disabled now. Enable the AR features first!');
+            return;
+        }
+
 		switch (command)
 		{
             // Reset
@@ -194,14 +209,11 @@ class ARCircuitScene extends React.Component
                 });
                 break;
             
-            // Edit code (Uno)
+            // Global request (send to ARMain)
             case "editor":
-                this.callParent("editor", data);
-                break;
-            
-            // Toast
+            case "update_editor":
             case "toast":
-                this.callParent("toast", data);
+                this.callParent(command, data);
                 break;
 		}
 	}
@@ -219,14 +231,7 @@ class ARCircuitScene extends React.Component
             {
                 case opCode.CREATE:
                     setTimeout(() => {
-                        this.callParent("toast", {
-                            type: "info",
-                            text1: "Add component",
-                            text2: `Touch target point to create component ${source}`,
-                            position: 'bottom',
-                            visibilityTime: 2000
-                        });
-                        
+                        this.makeToast('info', 'Add new component', `Touch target point to create component ${source}`, 2000);
                         this.setState({
                             mode: modeConstant.ADD,
                             caller: source
@@ -235,14 +240,7 @@ class ARCircuitScene extends React.Component
                     break;
                 case opCode.REMOVE:
                     setTimeout(() => {
-                        this.callParent("toast", {
-                            type: "info",
-                            text1: "Remove component",
-                            text2: `Touch target component to remove, touch blank to cancel.`,
-                            position: 'bottom',
-                            visibilityTime: 2000
-                        });
-
+                        this.makeToast('info', 'Remove component', 'Touch target component to remove. Touch blank to cancel.', 2000);
                         this.setState({
                             mode: modeConstant.REMOVE,
                             caller: null
@@ -251,13 +249,7 @@ class ARCircuitScene extends React.Component
                     break;
                 case opCode.REMOVE_CANCEL:
                     setTimeout(() => {
-                        this.callParent("toast", {
-                            type: "info",
-                            text1: "Remove canceled",
-                            position: 'bottom',
-                            visibilityTime: 2000
-                        });
-
+                        this.makeToast('info', 'Remove canceled', '', 2000);
                         this.setState({
                             mode: modeConstant.IDLE,
                             caller: null
@@ -266,8 +258,6 @@ class ARCircuitScene extends React.Component
                     break;
             }
         }
-
-        let compList = this.component.map(ARCircuitScene._getComp);
 
         const camera_handler = (newCameraTransform) => {
             let update = false;
@@ -297,10 +287,10 @@ class ARCircuitScene extends React.Component
         };
 
         const click_handler = (position, src) => {
+            this.makeToast('info', 'Debug', `ttt: [${position}], [${typeof(position)}], [${src}], [${typeof(src)}]`, 1000);
             switch (this.state.mode)
             {
                 case modeConstant.ADD:
-                    console.log(`create: ${position}`);
                     this.createComp(position, this.state.caller);
                     this.setState({
                         mode: modeConstant.IDLE,
@@ -308,12 +298,7 @@ class ARCircuitScene extends React.Component
                     });
                     break;
                 case modeConstant.REMOVE:
-                    this.callParent("toast", {
-                        type: "info",
-                        text1: "Remove canceled",
-                        position: 'bottom',
-                        visibilityTime: 2000
-                    });
+                    this.makeToast('info', 'Remove canceled', '', 2000);
                     this.setState({
                         mode: modeConstant.IDLE,
                         caller: null
@@ -322,8 +307,43 @@ class ARCircuitScene extends React.Component
             }
         }
 
+        const tracking_handler = (state, reason) => {
+            let type = '';
+            let title = '';
+            let message = '';
+            switch (state)
+            {
+                case ViroTrackingStateConstants.TRACKING_UNAVAILABLE:
+                    type = 'error';
+                    title = 'IEEC is disabled';
+                    message = 'The tracking status is unavailable. Please replace your camera.';
+                    break;
+                case ViroTrackingStateConstants.TRACKING_LIMITED:
+                    type = 'info';
+                    title = 'Tracking status is updated';
+                    message = 'Status: Limited, Replace your camera for better UX.';
+                    break;
+                case ViroTrackingStateConstants.TRACKING_NORMAL:
+                    type = 'success';
+                    title = 'Tracking status is updated';
+                    message = 'Status: Normal, Optimal AR feature will be served.';
+                    break;
+            }
+
+            this.makeToast(type, title, message);
+            this.setState({tracking: state});
+        }
+
+        let compList = this.component.map(this.renderComp);
+
         return (
-            <ViroARScene ref={(scene) => {this.scene = scene;}} onClick={click_handler} onCameraTransformUpdate={camera_handler}>
+            <ViroARScene
+                ref={(scene) => {this.scene = scene;}}
+                onClick={click_handler}
+                onCameraTransformUpdate={camera_handler}
+                onTrackingUpdated={tracking_handler}
+                >
+                <ViroLightingEnvironment source={require('./Component/res/garage_1k.hdr')}/>
                 <ViroAmbientLight color={"#aaaaaa"} influenceBitMask={1} />
                 {compList}
             </ViroARScene>
